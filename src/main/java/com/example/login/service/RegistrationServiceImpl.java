@@ -161,12 +161,11 @@ public class RegistrationServiceImpl implements RegistrationService {
     public Registration getPublicDetail(String registrationCode, String viewerCode) {
         Registration r = repository.findByRegistrationCode(registrationCode).orElse(null);
         if (r != null && r.getPersonal() != null) {
-            // Contact details are visible only to an accepted-connected viewer.
-            boolean connected = viewerCode != null && notificationService.areConnected(viewerCode, registrationCode);
-            if (!connected) {
-                r.getPersonal().setEmail(null);   // readOnly tx -> not flushed
-                r.getPersonal().setMobile(null);
-            }
+            // Email and mobile are never exposed publicly -- even to an accepted
+            // connection. Connected users communicate via the in-app messaging
+            // feature instead. (readOnly tx -> these nulls are not flushed.)
+            r.getPersonal().setEmail(null);
+            r.getPersonal().setMobile(null);
         }
         return r;
     }

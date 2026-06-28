@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MessageCircle, Search } from "lucide-react";
 import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
 import { downloadProfilePdf } from "../../utils/profilePdf";
+import ChatModal from "../ChatModal";
 
 function prettyLabel(k) {
   return k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -37,6 +38,17 @@ export default function SingleIdSearch() {
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [acceptedSet, setAcceptedSet] = useState(new Set());
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // Which profiles the logged-in user is accepted-connected with.
+  useEffect(() => {
+    if (!user) { setAcceptedSet(new Set()); return; }
+    fetch(`/api/interest/accepted?code=${encodeURIComponent(user.registrationCode)}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => setAcceptedSet(new Set((list || []).map((x) => x.registrationCode))))
+      .catch(() => { /* ignore */ });
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +79,7 @@ export default function SingleIdSearch() {
   const handleReset = () => { setId(""); setProfile(null); setPhoto(null); setError(""); };
 
   const p = profile;
-  const accepted = !!(p && p.personal && (p.personal.email || p.personal.mobile));
+  const accepted = !!(p && acceptedSet.has(p.registrationCode));
 
   return (
     <div className="min-h-screen bg-[#FAF7F0] py-10 px-4">
@@ -115,13 +127,13 @@ export default function SingleIdSearch() {
                 </div>
                 <p className="text-amber-200/90 text-sm">{p.registrationCode} · {p.personal?.maritalStatus || ""}</p>
                 <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full ${accepted ? "bg-green-600" : "bg-white/15"}`}>
-                  {accepted ? "✓ Accepted — full details" : "Limited details (connect to view contact)"}
+                  {accepted ? "✓ Accepted — you can message" : "Limited details (connect to message)"}
                 </span>
               </div>
             </div>
             <div className="p-5">
               <Section title="Personal" data={p.personal}
-                skip={["heightTotalInches", "heightFeet", "heightInches", ...(accepted ? [] : ["email", "mobile"])]}
+                skip={["heightTotalInches", "heightFeet", "heightInches", "email", "mobile"]}
                 extra={{ Height: p.personal?.heightTotalInches != null ? `${Math.floor(p.personal.heightTotalInches / 12)}'${p.personal.heightTotalInches % 12}"` : null }} />
               <Section title="Horoscope" data={p.horoscope} />
               <Section title="Education" data={p.education} />
@@ -129,7 +141,16 @@ export default function SingleIdSearch() {
               <Section title="Family" data={p.family} />
               <Section title="Expectation" data={p.expectation} />
             </div>
-            <div className="px-5 pb-5 flex justify-end border-t border-[#f0e4c8] pt-4">
+            <div className="px-5 pb-5 flex flex-wrap justify-end gap-3 border-t border-[#f0e4c8] pt-4">
+              {accepted && (
+                <button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-sm shadow-sm transition-all"
+                >
+                  💬 Message
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => { if (!downloadProfilePdf(p, photo)) setError("Please allow pop-ups to download the PDF."); }}
@@ -141,6 +162,15 @@ export default function SingleIdSearch() {
           </div>
         )}
       </div>
+
+      {chatOpen && user && p && (
+        <ChatModal
+          me={user.registrationCode}
+          other={p.registrationCode}
+          otherName={p.personal ? `${p.personal.firstName || ""} ${p.personal.lastName || ""}`.trim() : p.registrationCode}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
 
       <button type="button" aria-label="Chat with us" className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-b from-[#a0552c] to-[#7a3f1f] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
         <MessageCircle size={24} />

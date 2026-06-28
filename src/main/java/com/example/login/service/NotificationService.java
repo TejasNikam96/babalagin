@@ -52,6 +52,36 @@ public class NotificationService {
         return repository.findByRegistrationCodeOrderByIdDesc(registrationCode);
     }
 
+    /** All notifications with recipient name + mobile, for the admin page. */
+    @Transactional(readOnly = true)
+    public List<com.example.login.dto.AdminNotificationView> adminListAll() {
+        List<com.example.login.dto.AdminNotificationView> out = new java.util.ArrayList<>();
+        for (Notification n : repository.findAllByOrderByIdDesc()) {
+            com.example.login.dto.AdminNotificationView v = new com.example.login.dto.AdminNotificationView();
+            v.setId(n.getId());
+            v.setRegistrationCode(n.getRegistrationCode());
+            v.setType(n.getType());
+            v.setMessage(n.getMessage());
+            v.setFromName(n.getFromName());
+            v.setStatus(n.getStatus());
+            v.setRead(n.isRead());
+            v.setCreatedDate(n.getCreatedDate());
+            Registration r = n.getRegistrationCode() == null ? null
+                : registrationRepository.findByRegistrationCode(n.getRegistrationCode()).orElse(null);
+            if (r != null && r.getPersonal() != null) {
+                Personal p = r.getPersonal();
+                String name = ((p.getFirstName() != null ? p.getFirstName() : "") + " "
+                    + (p.getLastName() != null ? p.getLastName() : "")).trim();
+                v.setRecipientName(name.isEmpty() ? n.getRegistrationCode() : name);
+                v.setRecipientMobile(p.getMobile());
+            } else {
+                v.setRecipientName(n.getRegistrationCode());
+            }
+            out.add(v);
+        }
+        return out;
+    }
+
     @Transactional(readOnly = true)
     public long unread(String registrationCode) {
         return repository.countByRegistrationCodeAndReadFalse(registrationCode);

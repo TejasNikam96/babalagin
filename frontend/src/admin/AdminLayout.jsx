@@ -27,6 +27,7 @@ export default function AdminLayout() {
           <nav style={{ display: "flex", gap: 8 }}>
             <NavLink to="/admin/payments" style={linkStyle}>Payments Admin</NavLink>
             <NavLink to="/admin/profiles" style={linkStyle}>Profiles</NavLink>
+            <NavLink to="/admin/notifications" style={linkStyle}>Notifications</NavLink>
             <NavLink to="/admin/contacts" style={linkStyle}>Contact Messages</NavLink>
           </nav>
         </div>

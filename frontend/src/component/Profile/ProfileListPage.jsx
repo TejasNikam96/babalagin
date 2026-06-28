@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
+import ChatModal from "../ChatModal";
 
 /**
  * Shared, data-driven listing page for the Profile dropdown menus.
@@ -18,7 +19,7 @@ function InfoBadge({ icon, label, value }) {
   );
 }
 
-function ProfileCard({ p, accepted, onView, onInterest, onReject }) {
+function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage }) {
   // Profile photo from our database (or local default).
   const photo = photoOf(p);
   return (
@@ -67,6 +68,9 @@ function ProfileCard({ p, accepted, onView, onInterest, onReject }) {
               {accepted ? (
                 <>
                   <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Accepted</span>
+                  <button type="button" onClick={() => onMessage(p)} className="bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-xs font-semibold px-3 py-1 rounded-full transition-colors shadow-sm">
+                    💬 Message
+                  </button>
                   <button type="button" onClick={() => onReject(p)} className="bg-white border border-red-500 text-red-600 hover:bg-red-50 text-xs font-semibold px-3 py-1 rounded-full transition-colors shadow-sm">
                     Reject
                   </button>
@@ -98,6 +102,12 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmReject, setConfirmReject] = useState(null); // profile pending reject confirmation
   const [rejecting, setRejecting] = useState(false);
+  const [chatWith, setChatWith] = useState(null);   // open chat with this profile
+
+  const handleMessage = (p) => {
+    if (!user) { setNotice("Login first to send a message"); return; }
+    setChatWith({ registrationCode: p.registrationCode, name: p.name || (p.personal ? `${p.personal.firstName || ""} ${p.personal.lastName || ""}`.trim() : p.registrationCode) });
+  };
 
   const handleView = (p) => {
     if (!user) { setNotice("Login first to view profile"); return; }
@@ -336,7 +346,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
         ) : error ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm text-[#7A2238]">{error}</div>
         ) : visible.length > 0 ? (
-          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} onReject={handleReject} />)
+          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} onReject={handleReject} onMessage={handleMessage} />)
         ) : (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm">
             <div className="text-4xl mb-3">🔍</div>
@@ -357,6 +367,11 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
           </button>
           <span className="text-[10px] text-gray-400">Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}</span>
         </div>
+      )}
+
+      {/* Chat with an accepted connection */}
+      {chatWith && user && (
+        <ChatModal me={user.registrationCode} other={chatWith.registrationCode} otherName={chatWith.name} onClose={() => setChatWith(null)} />
       )}
 
       {/* Confirm reject popup */}
@@ -413,7 +428,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
               ) : (
                 <>
                   <Section title="Personal" data={detail.personal}
-                    skip={["heightTotalInches", "heightFeet", "heightInches", ...(acceptedSet.has(detail.registrationCode) ? [] : ["email", "mobile"])]}
+                    skip={["heightTotalInches", "heightFeet", "heightInches", "email", "mobile"]}
                     extra={{ Height: detail.personal?.heightTotalInches != null ? `${Math.floor(detail.personal.heightTotalInches / 12)}'${detail.personal.heightTotalInches % 12}"` : null }} />
                   <Section title="Horoscope" data={detail.horoscope} />
                   <Section title="Education" data={detail.education} />
@@ -436,6 +451,12 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
               {acceptedSet.has(detail.registrationCode) ? (
                 <>
                   <span className="px-5 py-2 rounded-full bg-green-600 text-white text-sm font-bold">✓ Accepted</span>
+                  <button
+                    onClick={() => handleMessage({ registrationCode: detail.registrationCode, personal: detail.personal })}
+                    className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-bold"
+                  >
+                    💬 Message
+                  </button>
                   <button
                     onClick={() => handleReject({ registrationCode: detail.registrationCode, name: detail.personal ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim() : "" })}
                     className="px-5 py-2 rounded-full bg-white border border-red-500 text-red-600 hover:bg-red-50 text-sm font-bold"

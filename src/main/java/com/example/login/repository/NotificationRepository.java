@@ -13,6 +13,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByRegistrationCodeOrderByIdDesc(String registrationCode);
 
+    List<Notification> findAllByOrderByIdDesc();
+
     long countByRegistrationCodeAndReadFalse(String registrationCode);
 
     // ---- accepted-interest connection queries ----

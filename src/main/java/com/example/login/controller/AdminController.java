@@ -32,18 +32,27 @@ public class AdminController {
     private final RegistrationService registrationService;
     private final PaymentService paymentService;
     private final ContactService contactService;
+    private final com.example.login.service.NotificationService notificationService;
 
     public AdminController(RegistrationService registrationService, PaymentService paymentService,
-                          ContactService contactService) {
+                          ContactService contactService,
+                          com.example.login.service.NotificationService notificationService) {
         this.registrationService = registrationService;
         this.paymentService = paymentService;
         this.contactService = contactService;
+        this.notificationService = notificationService;
     }
 
     /** All Contact-Us submissions (admin). */
     @GetMapping("/contacts")
     public List<ContactMessage> contacts() {
         return contactService.getAll();
+    }
+
+    /** All notifications with recipient name + mobile (for WhatsApp click-to-send). */
+    @GetMapping("/notifications")
+    public List<com.example.login.dto.AdminNotificationView> notifications() {
+        return notificationService.adminListAll();
     }
 
     /**
