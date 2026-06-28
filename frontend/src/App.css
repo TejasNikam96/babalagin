@@ -1,0 +1,233 @@
+/* src/App.css */
+
+/* ग्लोबल स्टाइल्स */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* App कंटेनर */
+.app-container {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* पोस्ट्स कंटेनर */
+.posts-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* हेडिंग */
+.posts-container h1 {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+/* एरर कंटेनर */
+.error-container {
+  text-align: center;
+  padding: 50px;
+  background: white;
+  border-radius: 15px;
+  margin: 50px auto;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.error-title {
+  color: #f44336;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* बटन्स */
+.retry-btn {
+  background-color: #f44336;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 20px;
+  transition: all 0.3s;
+}
+
+.retry-btn:hover {
+  background-color: #d32f2f;
+  transform: scale(1.05);
+}
+
+.back-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background-color: #45a049;
+  transform: translateX(-5px);
+}
+
+/* पोस्ट्स काउंट */
+.posts-count {
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 20px;
+  background: rgba(255,255,255,0.2);
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+/* पोस्ट्स ग्रिड */
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* पोस्ट कार्ड */
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.post-card h3 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.post-card p {
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+/* रीड मोर बटन */
+.read-more-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.read-more-btn:hover {
+  background-color: #1976D2;
+  transform: scale(1.05);
+}
+
+/* सिंगल पोस्ट कार्ड */
+.single-post-card {
+  border: 2px solid #4CAF50;
+  border-radius: 10px;
+  padding: 30px;
+  margin-top: 20px;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.single-post-card h2 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.post-meta {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.post-content {
+  line-height: 1.8;
+  font-size: 16px;
+  color: #444;
+}
+
+/* रिस्पॉन्सिव्ह डिझाइन */
+@media (max-width: 768px) {
+  .posts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .posts-container {
+    padding: 10px;
+  }
+  
+  .posts-container h1 {
+    font-size: 1.8rem;
+  }
+  
+  .single-post-card {
+    padding: 20px;
+  }
+}
+
+/* लोडिंग अ‍ॅनिमेशन (पर्यायी) */
+.loading-spinner {
+  text-align: center;
+  padding: 50px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4CAF50;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,147 @@
+package com.example.login.service;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.login.dto.ProfileSummary;
+import com.example.login.entity.Notification;
+import com.example.login.entity.Personal;
+import com.example.login.entity.Registration;
+import com.example.login.repository.NotificationRepository;
+import com.example.login.repository.RegistrationRepository;
+
+@Service
+public class NotificationService {
+
+    private final NotificationRepository repository;
+    private final RegistrationRepository registrationRepository;
+    private final DocumentService documentService;
+
+    public NotificationService(NotificationRepository repository, RegistrationRepository registrationRepository,
+                              DocumentService documentService) {
+        this.repository = repository;
+        this.registrationRepository = registrationRepository;
+        this.documentService = documentService;
+    }
+
+    @Transactional
+    public Notification create(String toCode, String type, String message,
+                              String fromCode, String fromName, String status) {
+        Notification n = new Notification();
+        n.setRegistrationCode(toCode);
+        n.setType(type);
+        n.setMessage(message);
+        n.setFromCode(fromCode);
+        n.setFromName(fromName);
+        n.setStatus(status);
+        n.setRead(false);
+        return repository.save(n);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Notification> list(String registrationCode) {
+        return repository.findByRegistrationCodeOrderByIdDesc(registrationCode);
+    }
+
+    @Transactional(readOnly = true)
+    public long unread(String registrationCode) {
+        return repository.countByRegistrationCodeAndReadFalse(registrationCode);
+    }
+
+    @Transactional
+    public void markAllRead(String registrationCode) {
+        List<Notification> items = repository.findByRegistrationCodeOrderByIdDesc(registrationCode);
+        for (Notification n : items) {
+            if (!n.isRead()) {
+                n.setRead(true);
+            }
+        }
+        repository.saveAll(items);
+    }
+
+    /** Someone expresses interest -> notify the target profile. */
+    @Transactional
+    public Notification expressInterest(String fromCode, String toCode) {
+        String fromName = nameOf(fromCode, fromCode);
+        return create(toCode, "INTEREST_RECEIVED",
+            fromName + " (" + fromCode + ") expressed interest in your profile.",
+            fromCode, fromName, "PENDING");
+    }
+
+    /** Recipient accepts/rejects an interest -> notify the original sender. */
+    @Transactional
+    public void respondToInterest(Long notificationId, String action) {
+        Notification n = repository.findById(notificationId).orElse(null);
+        if (n == null || !"INTEREST_RECEIVED".equals(n.getType())) {
+            return;
+        }
+        boolean accept = "ACCEPT".equalsIgnoreCase(action) || "ACCEPTED".equalsIgnoreCase(action);
+        n.setStatus(accept ? "ACCEPTED" : "REJECTED");
+        n.setRead(true);
+        repository.save(n);
+
+        String responderName = nameOf(n.getRegistrationCode(), n.getRegistrationCode());
+        create(n.getFromCode(),
+            accept ? "INTEREST_ACCEPTED" : "INTEREST_REJECTED",
+            responderName + " has " + (accept ? "accepted" : "rejected") + " your interest.",
+            n.getRegistrationCode(), responderName, null);
+    }
+
+    /** Codes the given user is "accepted-connected" with (either direction). */
+    @Transactional(readOnly = true)
+    public Set<String> getAcceptedCodes(String code) {
+        Set<String> codes = new LinkedHashSet<>();
+        // interests this user expressed that were accepted -> the acceptor codes
+        for (Notification n : repository.findByFromCodeAndTypeAndStatus(code, "INTEREST_RECEIVED", "ACCEPTED")) {
+            if (n.getRegistrationCode() != null) codes.add(n.getRegistrationCode());
+        }
+        // interests this user received and accepted -> the sender codes
+        for (Notification n : repository.findByRegistrationCodeAndTypeAndStatus(code, "INTEREST_RECEIVED", "ACCEPTED")) {
+            if (n.getFromCode() != null) codes.add(n.getFromCode());
+        }
+        return codes;
+    }
+
+    /** Profile summaries of a user's accepted connections. */
+    @Transactional(readOnly = true)
+    public List<ProfileSummary> getAcceptedProfiles(String code) {
+        return getAcceptedCodes(code).stream()
+            .map(c -> registrationRepository.findByRegistrationCode(c).orElse(null))
+            .filter(r -> r != null)
+            .map(r -> {
+                ProfileSummary ps = ProfileSummary.from(r);
+                ps.setPhoto(documentService.getProfileImageDataUrl(ps.getRegistrationCode()));
+                return ps;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /** True if a and b have an accepted interest in either direction. */
+    @Transactional(readOnly = true)
+    public boolean areConnected(String a, String b) {
+        if (a == null || b == null) return false;
+        return repository.existsByFromCodeAndRegistrationCodeAndTypeAndStatus(a, b, "INTEREST_RECEIVED", "ACCEPTED")
+            || repository.existsByFromCodeAndRegistrationCodeAndTypeAndStatus(b, a, "INTEREST_RECEIVED", "ACCEPTED");
+    }
+
+    private String nameOf(String code, String fallback) {
+        if (code == null) {
+            return fallback;
+        }
+        Registration r = registrationRepository.findByRegistrationCode(code).orElse(null);
+        if (r != null && r.getPersonal() != null) {
+            Personal p = r.getPersonal();
+            String name = ((p.getFirstName() != null ? p.getFirstName() : "") + " "
+                + (p.getLastName() != null ? p.getLastName() : "")).trim();
+            if (!name.isEmpty()) {
+                return name;
+            }
+        }
+        return fallback;
+    }
+}

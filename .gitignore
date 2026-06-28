@@ -1,0 +1,27 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# React frontend build artifacts (the compiled output is copied into
+# src/main/resources/static by build.ps1, so these don't need versioning)
+frontend/node_modules/
+frontend/build/
+
+# Generated: the React build is copied here by build.ps1 (regenerated each build)
+src/main/resources/static/
+
+# Eclipse / IDE project files (regenerated on Maven import)
+.classpath
+.project
+.settings/
+
+# Uploaded payment screenshots
+uploads/
+
+# File-based H2 dev database
+data/
