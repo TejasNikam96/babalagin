@@ -654,7 +654,18 @@ const Registration = () => {
   const goNext = () => {
     const errors = validateStep(step, formData);
     setStepErrors(errors);
-    if (Object.keys(errors).length === 0) dispatch(nextStep());
+    if (Object.keys(errors).length === 0) {
+      // On leaving the Personal step, save a draft to registrations_temp
+      // (best-effort; never blocks navigation). Removed on full registration.
+      if (step === 1) {
+        fetch("/api/registration/temp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ personal: formData.personal }),
+        }).catch(() => { /* ignore draft-save errors */ });
+      }
+      dispatch(nextStep());
+    }
   };
 
   const goPrev = () => {

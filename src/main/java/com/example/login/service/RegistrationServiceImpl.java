@@ -21,12 +21,38 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final RegistrationRepository repository;
     private final NotificationService notificationService;
     private final DocumentService documentService;
+    private final com.example.login.repository.RegistrationTempRepository tempRepository;
 
     public RegistrationServiceImpl(RegistrationRepository repository, NotificationService notificationService,
-                                   DocumentService documentService) {
+                                   DocumentService documentService,
+                                   com.example.login.repository.RegistrationTempRepository tempRepository) {
         this.repository = repository;
         this.notificationService = notificationService;
         this.documentService = documentService;
+        this.tempRepository = tempRepository;
+    }
+
+    @Override
+    @Transactional
+    public com.example.login.entity.RegistrationTemp saveTemp(RegistrationRequest request) {
+        com.example.login.entity.Personal p = request.getPersonal();
+        String email = (p != null && p.getEmail() != null) ? p.getEmail().trim() : null;
+        // Upsert by email so repeated "Next" clicks don't pile up duplicate drafts.
+        com.example.login.entity.RegistrationTemp temp = null;
+        if (email != null && !email.isEmpty()) {
+            java.util.List<com.example.login.entity.RegistrationTemp> existing =
+                tempRepository.findByPersonalEmail(email);
+            if (!existing.isEmpty()) {
+                temp = existing.get(0);
+            }
+        }
+        if (temp == null) {
+            temp = new com.example.login.entity.RegistrationTemp();
+        }
+        temp.setPersonal(p);
+        com.example.login.entity.RegistrationTemp saved = tempRepository.save(temp);
+        log.info("Saved personal-details draft to registrations_temp: id={}", saved.getId());
+        return saved;
     }
 
     /** Build a ProfileSummary with its profile photo (from the documents table). */
@@ -62,6 +88,17 @@ public class RegistrationServiceImpl implements RegistrationService {
         saved.setRegistrationCode(String.format("REG%05d", saved.getId()));
         Registration result = repository.save(saved);
         log.info("Registration created: id={}, code={}", result.getId(), result.getRegistrationCode());
+
+        // Profile fully created -> remove any personal-details draft for this email.
+        if (p != null && p.getEmail() != null && !p.getEmail().trim().isEmpty()) {
+            try {
+                tempRepository.deleteByPersonalEmail(p.getEmail().trim());
+                log.info("Cleared registrations_temp draft for completed registration code={}",
+                        result.getRegistrationCode());
+            } catch (Exception ex) {
+                log.warn("Could not clear registrations_temp draft: {}", ex.getMessage());
+            }
+        }
         return result;
     }
 
@@ -190,6 +227,18 @@ public class RegistrationServiceImpl implements RegistrationService {
                 partner != null ? toSummary(partner) : null));
         }
         return out;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getDashboardStats() {
+        java.util.Map<String, Long> m = new java.util.LinkedHashMap<>();
+        m.put("drafts", tempRepository.count());
+        m.put("active", repository.countByIsActive("Y"));
+        m.put("inactive", repository.countByIsActive("N"));
+        m.put("successStories", (long) getSuccessStories().size());
+        m.put("totalRegistrations", repository.count());
+        return m;
     }
 
     /** Blank -> null so the query treats it as "no filter". */

@@ -43,6 +43,12 @@ public class AdminController {
         this.notificationService = notificationService;
     }
 
+    /** Dashboard counts: drafts, active, inactive, success stories, total. */
+    @GetMapping("/dashboard")
+    public java.util.Map<String, Long> dashboard() {
+        return registrationService.getDashboardStats();
+    }
+
     /** All Contact-Us submissions (admin). */
     @GetMapping("/contacts")
     public List<ContactMessage> contacts() {

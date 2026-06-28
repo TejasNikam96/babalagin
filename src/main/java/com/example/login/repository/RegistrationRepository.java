@@ -28,6 +28,9 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     @Query("select count(r) > 0 from Registration r where lower(r.personal.email) = lower(:email)")
     boolean existsByEmail(@Param("email") String email);
 
+    /** Count registrations by active flag ("Y"/"N") for the admin dashboard. */
+    long countByIsActive(String isActive);
+
     @Query("select r from Registration r where lower(r.personal.email) = lower(:email)")
     Optional<Registration> findByEmail(@Param("email") String email);
 

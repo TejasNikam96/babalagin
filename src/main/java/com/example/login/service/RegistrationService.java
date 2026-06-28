@@ -14,6 +14,12 @@ public interface RegistrationService {
     /** Persists a new registration and returns the saved entity (with generated id). */
     Registration register(RegistrationRequest request);
 
+    /**
+     * Saves (upserts by email) the personal-details draft to registrations_temp
+     * when the user advances past the Personal step. Deleted on full registration.
+     */
+    com.example.login.entity.RegistrationTemp saveTemp(RegistrationRequest request);
+
     /** Returns a single registration by id, or throws if not found. */
     Registration getById(Long id);
 
@@ -47,4 +53,7 @@ public interface RegistrationService {
 
     /** Success stories: registrations flagged successStory=Y, paired by partnerId. */
     List<com.example.login.dto.SuccessStory> getSuccessStories();
+
+    /** Counts for the admin dashboard (drafts, active, inactive, success stories, total). */
+    java.util.Map<String, Long> getDashboardStats();
 }

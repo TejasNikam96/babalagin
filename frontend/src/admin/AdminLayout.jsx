@@ -25,6 +25,7 @@ export default function AdminLayout() {
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <span style={{ fontWeight: 800, color: "#f0b429", fontSize: 18, letterSpacing: "0.5px" }}>BABA LAGIN · Admin</span>
           <nav style={{ display: "flex", gap: 8 }}>
+            <NavLink to="/admin/dashboard" style={linkStyle}>Dashboard</NavLink>
             <NavLink to="/admin/payments" style={linkStyle}>Payments Admin</NavLink>
             <NavLink to="/admin/profiles" style={linkStyle}>Profiles</NavLink>
             <NavLink to="/admin/notifications" style={linkStyle}>Notifications</NavLink>

@@ -45,6 +45,20 @@ public class RegistrationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
+    /**
+     * Saves the personal-details draft when the user clicks "Next" on the
+     * Personal step. Not validated (partial data allowed); deleted automatically
+     * once the full profile is created.
+     */
+    @PostMapping("/temp")
+    public ResponseEntity<java.util.Map<String, Object>> saveTemp(@RequestBody RegistrationRequest request) {
+        com.example.login.entity.RegistrationTemp saved = service.saveTemp(request);
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("id", saved.getId());
+        body.put("message", "Draft saved.");
+        return ResponseEntity.ok(body);
+    }
+
     /** Fetches a single registration by id. */
     @GetMapping("/{id}")
     public ResponseEntity<Registration> getOne(@PathVariable Long id) {

@@ -23,6 +23,7 @@ import AdminDashboard from "../admin/AdminDashboard";
 import AdminProfiles from "../admin/AdminProfiles";
 import AdminContacts from "../admin/AdminContacts";
 import AdminNotifications from "../admin/AdminNotifications";
+import AdminStats from "../admin/AdminStats";
 import AdminLayout from "../admin/AdminLayout";
 import RequireAdmin from "../admin/RequireAdmin";
 
@@ -36,7 +37,8 @@ return(
    <Route path="/admin/login" element={<AdminLogin />} />
    <Route element={<RequireAdmin />}>
      <Route path="/admin" element={<AdminLayout />}>
-       <Route index element={<Navigate to="/admin/payments" replace />} />
+       <Route index element={<Navigate to="/admin/dashboard" replace />} />
+       <Route path="dashboard" element={<AdminStats />} />
        <Route path="payments" element={<AdminDashboard />} />
        <Route path="profiles" element={<AdminProfiles />} />
        <Route path="notifications" element={<AdminNotifications />} />
