@@ -71,4 +71,17 @@ public class NotificationController {
         body.put("message", "Done.");
         return body;
     }
+
+    /**
+     * Reject an already-accepted connection. The viewer ({@code fromCode}) removes
+     * the accepted connection with another profile ({@code code}).
+     */
+    @PostMapping("/api/interest/reject")
+    public Map<String, Object> reject(@RequestBody Map<String, String> req) {
+        boolean done = service.rejectConnection(req.get("fromCode"), req.get("code"));
+        Map<String, Object> body = new HashMap<>();
+        body.put("rejected", done);
+        body.put("message", done ? "Connection rejected." : "No accepted connection to reject.");
+        return body;
+    }
 }

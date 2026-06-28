@@ -100,6 +100,46 @@ public class NotificationService {
             n.getRegistrationCode(), responderName, null);
     }
 
+    /**
+     * Rejects an existing accepted connection between {@code viewerCode} and
+     * {@code otherCode}: flips the underlying accepted INTEREST_RECEIVED
+     * notification(s) (in either direction) to REJECTED, so the pair are no
+     * longer connected. Notifies the other party.
+     *
+     * @return true if at least one accepted connection was rejected.
+     */
+    @Transactional
+    public boolean rejectConnection(String viewerCode, String otherCode) {
+        if (viewerCode == null || otherCode == null) {
+            return false;
+        }
+        List<Notification> matches = new java.util.ArrayList<>();
+        // interest the viewer sent that the other accepted
+        matches.addAll(repository.findByFromCodeAndRegistrationCodeAndTypeAndStatus(
+            viewerCode, otherCode, "INTEREST_RECEIVED", "ACCEPTED"));
+        // interest the other sent that the viewer accepted
+        matches.addAll(repository.findByFromCodeAndRegistrationCodeAndTypeAndStatus(
+            otherCode, viewerCode, "INTEREST_RECEIVED", "ACCEPTED"));
+
+        if (matches.isEmpty()) {
+            log.warn("Reject connection: no accepted interest between {} and {}", viewerCode, otherCode);
+            return false;
+        }
+        for (Notification n : matches) {
+            n.setStatus("REJECTED");
+            n.setRead(true);
+        }
+        repository.saveAll(matches);
+        log.info("Connection rejected: {} removed accepted connection with {}", viewerCode, otherCode);
+
+        // Let the other party know the connection was withdrawn.
+        String viewerName = nameOf(viewerCode, viewerCode);
+        create(otherCode, "INTEREST_REJECTED",
+            viewerName + " has withdrawn the accepted connection.",
+            viewerCode, viewerName, null);
+        return true;
+    }
+
     /** Codes the given user is "accepted-connected" with (either direction). */
     @Transactional(readOnly = true)
     public Set<String> getAcceptedCodes(String code) {

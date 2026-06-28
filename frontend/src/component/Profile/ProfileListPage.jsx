@@ -17,7 +17,7 @@ function InfoBadge({ icon, label, value }) {
   );
 }
 
-function ProfileCard({ p, accepted, onView, onInterest }) {
+function ProfileCard({ p, accepted, onView, onInterest, onReject }) {
   // Profile photo from our database (or local default).
   const photo = photoOf(p);
   return (
@@ -61,7 +61,12 @@ function ProfileCard({ p, accepted, onView, onInterest }) {
 
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {accepted ? (
-                <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Accepted</span>
+                <>
+                  <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Accepted</span>
+                  <button type="button" onClick={() => onReject(p)} className="bg-white border border-red-500 text-red-600 hover:bg-red-50 text-xs font-semibold px-3 py-1 rounded-full transition-colors shadow-sm">
+                    Reject
+                  </button>
+                </>
               ) : (
                 <button type="button" onClick={() => onInterest(p)} className="bg-[#F2C14E] hover:bg-amber-400 text-[#6B0F2B] text-xs font-semibold px-3 py-1 rounded-full transition-colors shadow-sm">
                   Express Interest
@@ -87,6 +92,8 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
   const [notice, setNotice] = useState(null);       // error/info popup text
   const [detail, setDetail] = useState(null);       // full profile for the View Profile popup
   const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(null); // profile pending reject confirmation
+  const [rejecting, setRejecting] = useState(false);
 
   const handleView = (p) => {
     if (!user) { setNotice("Login first to view profile"); return; }
@@ -113,6 +120,116 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
     })
       .then(() => setNotice(`Your interest has been sent to ${p?.name || "this profile"}.`))
       .catch(() => setNotice("Could not send interest. Please try again."));
+  };
+
+  // Ask for confirmation before rejecting an accepted connection.
+  const handleReject = (p) => {
+    if (!user) { setNotice("Login first."); return; }
+    setConfirmReject(p);
+  };
+
+  // Download the open profile as a PDF (via the browser's print -> Save as PDF).
+  // Email and mobile are intentionally excluded from the document.
+  const handleDownload = () => {
+    const d = detail;
+    if (!d) return;
+    const fullName = d.personal
+      ? `${d.personal.firstName || ""} ${d.personal.lastName || ""}`.trim()
+      : (d.registrationCode || "Profile");
+    const photo = d.photo || DEFAULT_AVATAR;
+    const heightStr = d.personal && d.personal.heightTotalInches != null
+      ? `${Math.floor(d.personal.heightTotalInches / 12)}'${d.personal.heightTotalInches % 12}"` : null;
+
+    const section = (heading, data, skip = [], extra = {}) => {
+      const rows = [];
+      Object.entries(extra).forEach(([k, v]) => { if (v !== null && v !== "") rows.push([k, v]); });
+      if (data) {
+        Object.entries(data).forEach(([k, v]) => {
+          if (skip.includes(k) || v === null || v === "" || typeof v === "object") return;
+          rows.push([prettyLabel(k), String(v)]);
+        });
+      }
+      if (!rows.length) return "";
+      const cells = rows
+        .map(([k, v]) => `<div class="row"><span class="k">${esc(k)}:</span> <span class="v">${esc(v)}</span></div>`)
+        .join("");
+      return `<h3>${esc(heading)}</h3><div class="grid">${cells}</div>`;
+    };
+
+    const body =
+      section("Personal", d.personal,
+        ["email", "mobile", "heightTotalInches", "heightFeet", "heightInches"],
+        heightStr ? { Height: heightStr } : {}) +
+      section("Horoscope", d.horoscope) +
+      section("Education", d.education) +
+      section("Address", d.address) +
+      section("Family", d.family) +
+      section("Expectation", d.expectation);
+
+    const html = `<!doctype html><html><head><meta charset="utf-8">
+      <title>${esc(fullName)} - ${esc(d.registrationCode || "")}</title>
+      <style>
+        *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#222}
+        .header{background:#6B0F2B;color:#fff;padding:20px 28px;display:flex;align-items:center;gap:18px}
+        .header img{width:96px;height:120px;object-fit:cover;border:2px solid #F2C14E;border-radius:8px;background:#3a0613}
+        .brand{font-size:12px;letter-spacing:3px;color:#F2C14E;text-transform:uppercase}
+        .name{font-size:24px;font-weight:bold;margin:2px 0}
+        .meta{color:#f5d9b0;font-size:13px}
+        .content{padding:22px 28px}
+        h3{color:#7A2238;border-bottom:2px solid #f0e4c8;padding-bottom:4px;margin:18px 0 8px;font-size:15px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+        .row{font-size:13px}
+        .k{color:#777}.v{color:#222;font-weight:600}
+        .foot{margin-top:26px;padding-top:10px;border-top:1px solid #eee;font-size:11px;color:#999;text-align:center}
+      </style></head>
+      <body>
+        <div class="header">
+          <img src="${photo}" alt=""/>
+          <div>
+            <div class="brand">BABA LAGIN Vadhu-Var Kendra</div>
+            <div class="name">${esc(fullName)}</div>
+            <div class="meta">${esc(d.registrationCode || "")} ${d.personal && d.personal.maritalStatus ? "&middot; " + esc(d.personal.maritalStatus) : ""}</div>
+          </div>
+        </div>
+        <div class="content">${body}
+          <div class="foot">Generated from BABA LAGIN &middot; Contact details are shared only after an accepted connection.</div>
+        </div>
+        <script>window.onload=function(){window.focus();window.print();};window.onafterprint=function(){window.close();};</script>
+      </body></html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) { setNotice("Please allow pop-ups to download the PDF."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
+  const doReject = () => {
+    const p = confirmReject;
+    if (!p) return;
+    setRejecting(true);
+    fetch("/api/interest/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromCode: user.registrationCode, code: p.registrationCode }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(() => {
+        // Drop from the accepted set; on the accepted page also remove the card.
+        setAcceptedSet((prev) => {
+          const next = new Set(prev);
+          next.delete(p.registrationCode);
+          return next;
+        });
+        if (mode === "accepted") {
+          setAll((prev) => prev.filter((x) => x.registrationCode !== p.registrationCode));
+        }
+        if (detail && detail.registrationCode === p.registrationCode) setDetail(null);
+        setConfirmReject(null);
+        setNotice(`You have rejected the accepted interest from ${p.name || "this profile"}.`);
+      })
+      .catch(() => setNotice("Could not reject. Please try again."))
+      .finally(() => setRejecting(false));
   };
 
   useEffect(() => {
@@ -215,7 +332,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
         ) : error ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm text-[#7A2238]">{error}</div>
         ) : visible.length > 0 ? (
-          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} />)
+          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} onReject={handleReject} />)
         ) : (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm">
             <div className="text-4xl mb-3">🔍</div>
@@ -235,6 +352,27 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
             View more profiles →
           </button>
           <span className="text-[10px] text-gray-400">Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}</span>
+        </div>
+      )}
+
+      {/* Confirm reject popup */}
+      {confirmReject && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[1100]" onClick={() => !rejecting && setConfirmReject(null)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-3xl mb-2">⚠️</div>
+            <p className="text-[#3a0613] font-semibold mb-1">Reject accepted interest?</p>
+            <p className="text-sm text-gray-600 mb-4">
+              {confirmReject.name || "This profile"} will be removed from your accepted connections, and contact details will be hidden again.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button onClick={() => setConfirmReject(null)} disabled={rejecting} className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 text-sm font-semibold disabled:opacity-60">
+                Cancel
+              </button>
+              <button onClick={doReject} disabled={rejecting} className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-60">
+                {rejecting ? "Rejecting…" : "Reject"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -278,10 +416,26 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
                 </>
               )}
             </div>
-            <div className="p-4 border-t flex justify-end gap-3">
+            <div className="p-4 border-t flex flex-wrap items-center justify-between gap-3">
+              <button
+                onClick={handleDownload}
+                disabled={detailLoading}
+                className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold shadow-sm disabled:opacity-50"
+              >
+                ⬇ Download PDF
+              </button>
+              <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setDetail(null)} className="px-5 py-2 rounded-full border border-[#6B0F2B] text-[#6B0F2B] text-sm font-semibold">Close</button>
               {acceptedSet.has(detail.registrationCode) ? (
-                <span className="px-5 py-2 rounded-full bg-green-600 text-white text-sm font-bold">✓ Accepted</span>
+                <>
+                  <span className="px-5 py-2 rounded-full bg-green-600 text-white text-sm font-bold">✓ Accepted</span>
+                  <button
+                    onClick={() => handleReject({ registrationCode: detail.registrationCode, name: detail.personal ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim() : "" })}
+                    className="px-5 py-2 rounded-full bg-white border border-red-500 text-red-600 hover:bg-red-50 text-sm font-bold"
+                  >
+                    Reject
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => handleInterest({ registrationCode: detail.registrationCode, name: detail.personal ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim() : "" })}
@@ -290,6 +444,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
                   Express Interest
                 </button>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -300,6 +455,11 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
 
 function prettyLabel(k) {
   return k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 function Section({ title, data, skip = [], extra = {} }) {

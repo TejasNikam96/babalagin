@@ -21,4 +21,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByRegistrationCodeAndTypeAndStatus(String registrationCode, String type, String status);
 
     boolean existsByFromCodeAndRegistrationCodeAndTypeAndStatus(String fromCode, String registrationCode, String type, String status);
+
+    List<Notification> findByFromCodeAndRegistrationCodeAndTypeAndStatus(String fromCode, String registrationCode, String type, String status);
 }
