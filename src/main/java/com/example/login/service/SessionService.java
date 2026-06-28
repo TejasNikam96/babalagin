@@ -4,6 +4,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,6 +26,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SessionService {
+
+    private static final Logger log = LoggerFactory.getLogger(SessionService.class);
 
     /** Idle timeout: log out after 30 minutes without activity. */
     public static final long IDLE_TIMEOUT_MS = 30 * 60 * 1000L;
@@ -47,6 +51,7 @@ public class SessionService {
         sweepExpired();
         String token = UUID.randomUUID().toString().replace("-", "");
         sessions.put(token, new Session(principal, role, System.currentTimeMillis()));
+        log.debug("Session created: principal={}, role={}, activeSessions={}", principal, role, sessions.size());
         return token;
     }
 
@@ -60,6 +65,7 @@ public class SessionService {
         if (s == null) return Optional.empty();
         if (isExpired(s)) {
             sessions.remove(token);
+            log.info("Session expired (idle timeout) for principal={}", s.principal);
             return Optional.empty();
         }
         return Optional.of(s.role);
@@ -80,6 +86,7 @@ public class SessionService {
         if (s == null) return false;
         if (isExpired(s)) {
             sessions.remove(token);
+            log.info("Session expired (idle timeout) on heartbeat for principal={}", s.principal);
             return false;
         }
         s.lastAccess = System.currentTimeMillis();

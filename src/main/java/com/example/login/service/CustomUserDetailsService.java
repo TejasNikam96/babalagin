@@ -24,10 +24,16 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.repository = repository;
     }
 
+    private static final org.slf4j.Logger log =
+        org.slf4j.LoggerFactory.getLogger(CustomUserDetailsService.class);
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AppUser user = repository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+            .orElseThrow(() -> {
+                log.warn("Authentication lookup failed: user not found: {}", username);
+                return new UsernameNotFoundException("User not found: " + username);
+            });
 
         return User.builder()
             .username(user.getUsername())

@@ -25,3 +25,6 @@ uploads/
 
 # File-based H2 dev database
 data/
+
+# Application execution logs (rolling files written by logback)
+logs/

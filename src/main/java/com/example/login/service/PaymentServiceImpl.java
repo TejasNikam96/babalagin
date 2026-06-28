@@ -9,6 +9,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,8 @@ import com.example.login.repository.PaymentRepository;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentRepository repository;
     private final NotificationService notificationService;
@@ -38,6 +42,8 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public Payment verifyPayment(String registrationId, String transactionId, String upiId,
                                  String amount, MultipartFile screenshot) {
+        log.info("Payment submission: regId={}, txn={}, amount={}, hasScreenshot={}",
+                registrationId, transactionId, amount, screenshot != null && !screenshot.isEmpty());
         Payment payment = new Payment();
         payment.setRegistrationId(registrationId);
         payment.setTransactionId(transactionId);
@@ -71,6 +77,7 @@ public class PaymentServiceImpl implements PaymentService {
             file.transferTo(target);
             return target.toString();
         } catch (IOException e) {
+            log.error("Failed to store payment screenshot: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to store payment screenshot: " + e.getMessage(), e);
         }
     }
@@ -98,10 +105,13 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public Payment updateStatus(Long id, String status, String note) {
         Payment payment = getById(id);
+        String previous = payment.getStatus();
         payment.setStatus(status);
         payment.setStatusNote(note);
         payment.setUpdatedAt(LocalDateTime.now());
         Payment saved = repository.save(payment);
+        log.info("Payment status changed: id={}, regId={}, {} -> {}",
+                id, saved.getRegistrationId(), previous, status);
 
         // Notify the registration owner about the payment decision.
         if (saved.getRegistrationId() != null) {
@@ -121,6 +131,8 @@ public class PaymentServiceImpl implements PaymentService {
             return updateStatus(latest.getId(), status, "Set by admin");
         }
         // No payment yet -> create one carrying the chosen status.
+        log.info("No payment found for code={}; creating admin-set payment with status={}",
+                registrationCode, status);
         Payment p = new Payment();
         p.setRegistrationId(registrationCode);
         p.setTransactionId("ADMIN-SET");

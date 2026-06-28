@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import com.example.login.repository.RegistrationRepository;
 
 @Service
 public class NotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
     private final NotificationRepository repository;
     private final RegistrationRepository registrationRepository;
@@ -67,6 +71,7 @@ public class NotificationService {
     /** Someone expresses interest -> notify the target profile. */
     @Transactional
     public Notification expressInterest(String fromCode, String toCode) {
+        log.info("Interest expressed: from={} -> to={}", fromCode, toCode);
         String fromName = nameOf(fromCode, fromCode);
         return create(toCode, "INTEREST_RECEIVED",
             fromName + " (" + fromCode + ") expressed interest in your profile.",
@@ -78,9 +83,12 @@ public class NotificationService {
     public void respondToInterest(Long notificationId, String action) {
         Notification n = repository.findById(notificationId).orElse(null);
         if (n == null || !"INTEREST_RECEIVED".equals(n.getType())) {
+            log.warn("Interest response ignored: notificationId={} not found or wrong type", notificationId);
             return;
         }
         boolean accept = "ACCEPT".equalsIgnoreCase(action) || "ACCEPTED".equalsIgnoreCase(action);
+        log.info("Interest {} : notificationId={}, responder={}, originalSender={}",
+                accept ? "ACCEPTED" : "REJECTED", notificationId, n.getRegistrationCode(), n.getFromCode());
         n.setStatus(accept ? "ACCEPTED" : "REJECTED");
         n.setRead(true);
         repository.save(n);

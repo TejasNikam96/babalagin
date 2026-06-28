@@ -31,6 +31,8 @@ import com.example.login.service.RegistrationService;
 @CrossOrigin
 public class LoginController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LoginController.class);
+
     private final RegistrationService registrationService;
     private final PaymentService paymentService;
     private final ServerInstance serverInstance;
@@ -59,6 +61,7 @@ public class LoginController {
             registrationService.login(request.getRegistrationId(), request.getEmail());
 
         if (!match.isPresent()) {
+            log.warn("Profile login failed (invalid id/email) for id='{}'", request.getRegistrationId());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(LoginResponse.failure("Invalid Registration ID or Email."));
         }
@@ -75,6 +78,8 @@ public class LoginController {
             String msg = rejected
                 ? "Your payment was rejected by the admin. Please contact support or resubmit your payment."
                 : "Your payment is pending verification by the admin. You can log in once it is approved.";
+            log.warn("Profile login blocked for code={} (payment {})",
+                    reg.getRegistrationCode(), rejected ? "REJECTED" : "PENDING");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(LoginResponse.failure(msg));
         }
 
@@ -91,6 +96,7 @@ public class LoginController {
         // Issue a server-side session token (30-minute idle timeout).
         body.setToken(sessionService.create(reg.getRegistrationCode(), "PROFILE"));
         body.setMessage("Login successful.");
+        log.info("Profile login success: code={}", reg.getRegistrationCode());
         return ResponseEntity.ok(body);
     }
 

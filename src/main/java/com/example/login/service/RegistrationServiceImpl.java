@@ -3,6 +3,8 @@ package com.example.login.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,8 @@ import com.example.login.repository.RegistrationRepository;
 
 @Service
 public class RegistrationServiceImpl implements RegistrationService {
+
+    private static final Logger log = LoggerFactory.getLogger(RegistrationServiceImpl.class);
 
     private final RegistrationRepository repository;
     private final NotificationService notificationService;
@@ -56,16 +60,25 @@ public class RegistrationServiceImpl implements RegistrationService {
         // First save to obtain the generated id, then derive the login code.
         Registration saved = repository.save(entity);
         saved.setRegistrationCode(String.format("REG%05d", saved.getId()));
-        return repository.save(saved);
+        Registration result = repository.save(saved);
+        log.info("Registration created: id={}, code={}", result.getId(), result.getRegistrationCode());
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Registration> login(String registrationId, String email) {
         if (registrationId == null || email == null) {
+            log.warn("Login attempt with missing registrationId or email");
             return Optional.empty();
         }
-        return repository.findByRegistrationCodeAndEmail(registrationId.trim(), email.trim());
+        Optional<Registration> match = repository.findByRegistrationCodeAndEmail(registrationId.trim(), email.trim());
+        if (match.isPresent()) {
+            log.info("Login credentials matched for code={}", registrationId.trim());
+        } else {
+            log.warn("Login credentials did not match for code={}", registrationId.trim());
+        }
+        return match;
     }
 
     @Override
@@ -76,6 +89,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         String yearFrom = c.getAgeTo() != null ? String.valueOf(currentYear - c.getAgeTo()) : null;
         String yearTo = c.getAgeFrom() != null ? String.valueOf(currentYear - c.getAgeFrom()) : null;
 
+        log.debug("Profile search: lookingFor={}, maritalStatus={}, location={}, ageFrom={}, ageTo={}",
+                c.getLookingFor(), c.getMaritalStatus(), c.getLocation(), c.getAgeFrom(), c.getAgeTo());
         return repository.search(
                 nz(c.getLookingFor()),
                 nz(c.getMaritalStatus()),
@@ -136,7 +151,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         existing.setSuccessStory(incoming.getSuccessStory());
         existing.setPartnerId(incoming.getPartnerId());
 
-        return repository.save(existing);
+        Registration result = repository.save(existing);
+        log.info("Admin updated registration: id={}, code={}", result.getId(), result.getRegistrationCode());
+        return result;
     }
 
     @Override

@@ -5,6 +5,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -15,6 +17,8 @@ import com.example.login.repository.DocumentRepository;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentServiceImpl.class);
 
     private final DocumentRepository repository;
 
@@ -37,8 +41,12 @@ public class DocumentServiceImpl implements DocumentService {
                 file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename()));
             doc.setContentType(file.getContentType());
             doc.setDataBase64(base64);
-            return repository.save(doc);
+            Document saved = repository.save(doc);
+            log.info("Document uploaded: id={}, code={}, type={}, contentType={}, sizeBytes={}",
+                    saved.getId(), registrationCode, saved.getDocType(), file.getContentType(), file.getSize());
+            return saved;
         } catch (IOException e) {
+            log.error("Failed to read uploaded file for code={}: {}", registrationCode, e.getMessage(), e);
             throw new RuntimeException("Failed to read uploaded file: " + e.getMessage(), e);
         }
     }
