@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
+import NotActiveTag from "../NotActiveTag";
 
 function Avatar({ p }) {
   return (
@@ -58,6 +59,7 @@ export default function SuccessStories() {
                     <Avatar p={s.person} />
                     <p className="mt-2 font-bold text-[#6B0F2B] text-sm">{s.person?.name || "—"}</p>
                     <p className="text-[11px] text-gray-500">{s.person?.city || ""}</p>
+                    <div className="mt-1 flex justify-center"><NotActiveTag isActive={s.person?.isActive} /></div>
                   </div>
                   <Heart className="w-8 h-8 text-[#e74c3c] shrink-0" fill="#e74c3c" />
                   <div className="text-center">
@@ -66,6 +68,7 @@ export default function SuccessStories() {
                         <Avatar p={s.partner} />
                         <p className="mt-2 font-bold text-[#6B0F2B] text-sm">{s.partner.name || "—"}</p>
                         <p className="text-[11px] text-gray-500">{s.partner.city || ""}</p>
+                        <div className="mt-1 flex justify-center"><NotActiveTag isActive={s.partner.isActive} /></div>
                       </>
                     ) : (
                       <div className="w-24 h-24 rounded-full bg-[#fdf3da] border-4 border-[#F2C14E] flex items-center justify-center text-[#7a1224] text-xs">Partner</div>

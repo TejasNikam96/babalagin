@@ -69,6 +69,15 @@ const COLS = [
   { h: "Payment", g: (x) => x.paymentStatus },
 ];
 
+// Key columns included in the PDF export (the full 60-column table is too wide
+// for a printable page, so the export uses the most useful subset).
+const PDF_HEADERS = ["Reg Code", "First Name", "Last Name", "Email", "Mobile", "Gender", "DOB",
+  "Marital", "Height", "Community", "Education", "Occupation", "Income", "City", "Native",
+  "Payment", "Active", "Created"];
+const PDF_COLS = PDF_HEADERS.map((h) => COLS.find((c) => c.h === h)).filter(Boolean);
+
+const escH = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
 // Editable fields grouped by section (id is shown read-only; not here).
 const EDIT_SECTIONS = [
   ["personal", ["firstName", "middleName", "lastName", "email", "mobile", "gender", "dobDay", "dobMonth", "dobYear", "subCaste", "maritalStatus", "heightFeet", "heightInches", "weight", "bloodGroup", "complexion", "physicalDisability", "disabilityDetails", "diet", "spectacles", "community"]],
@@ -85,6 +94,8 @@ export default function AdminProfiles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [f, setF] = useState({ gender: "", isActive: "", createdFrom: "", createdTo: "", paymentStatus: "" });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editing, setEditing] = useState(null); // registration object being edited
   const [editPayment, setEditPayment] = useState("");      // chosen payment status
   const [editPaymentOrig, setEditPaymentOrig] = useState(""); // original, to detect change
@@ -107,6 +118,7 @@ export default function AdminProfiles() {
       if (res.status === 401 || res.status === 403) { logout(); return; }
       if (!res.ok) { setError(`Failed to load (status ${res.status}).`); return; }
       setRows(await res.json());
+      setPage(1); // reset to first page on every (re)load
     } catch (e) {
       setError("Could not reach the server.");
     } finally {
@@ -168,6 +180,51 @@ export default function AdminProfiles() {
     }
   };
 
+  // Export the currently-filtered rows to a PDF (browser print -> Save as PDF).
+  const downloadPdf = () => {
+    if (!rows.length) return;
+    const head = `<th>Sr.No.</th>` + PDF_COLS.map((c) => `<th>${escH(c.h)}</th>`).join("");
+    const body = rows
+      .map((x, i) => `<tr><td>${i + 1}</td>${PDF_COLS.map((c) => `<td>${escH(c.g(x))}</td>`).join("")}</tr>`)
+      .join("");
+    const activeFilters = Object.entries(f)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${v}`).join(", ") || "none";
+    const when = new Date().toLocaleString();
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>BABA LAGIN - Profiles</title>
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:0}
+        .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #6B0F2B;padding-bottom:6px;margin-bottom:8px}
+        .brand{font-size:18px;font-weight:bold;color:#6B0F2B} .brand span{color:#B8860B}
+        .sub{font-size:10px;color:#666}
+        table{border-collapse:collapse;width:100%;font-size:8px}
+        th,td{border:1px solid #ddd;padding:3px 4px;text-align:left;vertical-align:top;word-break:break-word}
+        th{background:#fbeec9;color:#3a0613}
+        tr:nth-child(even) td{background:#fbfbfb}
+      </style></head>
+      <body>
+        <div class="head">
+          <div class="brand">BABA <span>LAGIN</span> — Profiles</div>
+          <div class="sub">${rows.length} record(s) &middot; Filters: ${escH(activeFilters)} &middot; Generated: ${escH(when)}</div>
+        </div>
+        <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+        <script>window.onload=function(){window.focus();window.print();};window.onafterprint=function(){window.close();};</script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { setError("Please allow pop-ups to download the PDF."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
+  // Pagination math
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const paged = rows.slice(startIdx, startIdx + pageSize);
+
   return (
     <div style={{ padding: 20 }}>
       <h1 style={{ margin: "0 0 14px", color: "#3a0613", fontSize: 20 }}>Profiles</h1>
@@ -213,7 +270,14 @@ export default function AdminProfiles() {
         <p>Loading…</p>
       ) : (
         <>
-          <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{rows.length} profile(s)</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 8 }}>
+            <p style={{ fontSize: 13, color: "#666", margin: 0 }}>
+              {total} profile(s){total > 0 ? ` — showing ${startIdx + 1}–${Math.min(startIdx + pageSize, total)}` : ""}
+            </p>
+            <button type="button" onClick={downloadPdf} disabled={total === 0} style={{ ...btnPrimary, opacity: total === 0 ? 0.5 : 1 }}>
+              ⬇ Download PDF
+            </button>
+          </div>
           <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #eee", borderRadius: 8 }}>
             <table style={{ borderCollapse: "collapse", fontSize: 12, whiteSpace: "nowrap" }}>
               <thead>
@@ -226,9 +290,9 @@ export default function AdminProfiles() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((x, i) => (
+                {paged.map((x, i) => (
                   <tr key={reg(x).id || i} style={{ background: i % 2 ? "#fbfbfb" : "#fff" }}>
-                    <td style={td}>{i + 1}</td>
+                    <td style={td}>{startIdx + i + 1}</td>
                     {COLS.map((c) => (
                       <td key={c.h} style={td} title={c.g(x) || ""}>{c.g(x)}</td>
                     ))}
@@ -237,12 +301,36 @@ export default function AdminProfiles() {
                     </td>
                   </tr>
                 ))}
-                {rows.length === 0 && (
+                {total === 0 && (
                   <tr><td style={td} colSpan={COLS.length + 2}>No profiles match the filters.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination controls */}
+          {total > 0 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
+              <label style={{ fontSize: 12, color: "#555", display: "flex", alignItems: "center", gap: 6 }}>
+                Rows per page:
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                  style={{ padding: "5px 8px", border: "1px solid #ccc", borderRadius: 6, fontSize: 13 }}
+                >
+                  {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button type="button" onClick={() => setPage(1)} disabled={safePage === 1} style={pageBtn(safePage === 1)}>« First</button>
+                <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} style={pageBtn(safePage === 1)}>‹ Prev</button>
+                <span style={{ fontSize: 13, color: "#3a0613", fontWeight: 600, padding: "0 8px" }}>Page {safePage} of {totalPages}</span>
+                <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} style={pageBtn(safePage === totalPages)}>Next ›</button>
+                <button type="button" onClick={() => setPage(totalPages)} disabled={safePage === totalPages} style={pageBtn(safePage === totalPages)}>Last »</button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -327,6 +415,7 @@ const btnGhost = { padding: "9px 18px", background: "#fff", color: "#3a0613", bo
 const th = { textAlign: "left", padding: "8px 10px", background: "#fbeec9", color: "#3a0613", borderBottom: "2px solid #f0e4c8", position: "sticky", top: 0 };
 const td = { padding: "7px 10px", borderBottom: "1px solid #eee", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis" };
 const editBtn = { padding: "5px 14px", background: "#3a0613", color: "#f0b429", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 12, fontWeight: 700 };
+const pageBtn = (disabled) => ({ padding: "6px 12px", background: disabled ? "#f3f3f3" : "#fff", color: disabled ? "#aaa" : "#3a0613", border: "1px solid #ccc", borderRadius: 6, cursor: disabled ? "default" : "pointer", fontSize: 12, fontWeight: 600 });
 const overlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 24, zIndex: 1000, overflowY: "auto" };
 const modal = { background: "#fff", borderRadius: 10, padding: 24, width: 920, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" };
 const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 };

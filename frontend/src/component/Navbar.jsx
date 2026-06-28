@@ -107,6 +107,14 @@ export default function Navbar() {
   };
 
   const handleLogout = () => {
+    // Invalidate the server-side session token (best-effort), then clear the
+    // browser state. Mirrors the admin logout so a session can't linger.
+    const token = user && user.token;
+    if (token) {
+      try {
+        fetch("/api/session/logout", { method: "POST", headers: { "X-Auth-Token": token } });
+      } catch (_) { /* ignore network errors during logout */ }
+    }
     dispatch(logout());
     setOpen(false);
     navigate("/");

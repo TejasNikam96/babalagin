@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
+import NotActiveTag from "../NotActiveTag";
 
 /**
  * Shared, data-driven listing page for the Profile dropdown menus.
@@ -42,7 +43,10 @@ function ProfileCard({ p, accepted, onView, onInterest, onReject }) {
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-1 mb-2">
               <div>
-                <h3 className="text-lg font-bold text-[#6B0F2B]">{p.name || "—"}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-[#6B0F2B]">{p.name || "—"}</h3>
+                  <NotActiveTag isActive={p.isActive} />
+                </div>
                 <p className="text-xs text-gray-500">{p.maritalStatus} · {p.community || "—"}</p>
               </div>
               <button type="button" onClick={() => onView(p)} className="bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-xs font-semibold px-4 py-1.5 rounded-full transition-all shadow-sm">
@@ -393,9 +397,12 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
             <div className="bg-gradient-to-br from-[#6B0F2B] to-[#8B1538] text-white p-5 flex items-center gap-4">
               <img src={detail.photo || DEFAULT_AVATAR} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }} />
               <div>
-                <h2 className="text-xl font-bold">
-                  {detail.personal ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim() : detail.registrationCode}
-                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-bold">
+                    {detail.personal ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim() : detail.registrationCode}
+                  </h2>
+                  <NotActiveTag isActive={detail.isActive} />
+                </div>
                 <p className="text-amber-200/90 text-sm">{detail.registrationCode} · {detail.personal?.maritalStatus || ""}</p>
               </div>
               <button onClick={() => setDetail(null)} className="ml-auto text-white/80 hover:text-white text-3xl leading-none">×</button>

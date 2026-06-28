@@ -56,6 +56,18 @@ public class SessionController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body(false));
     }
 
+    /**
+     * Logs out the current session by invalidating its token on the server.
+     * Used by the profile (non-admin) logout; admins use /api/admin/logout.
+     * Always returns 204 (idempotent — logging out an unknown token is fine).
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = TokenAuthenticationFilter.HEADER, required = false) String token) {
+        sessionService.invalidate(token);
+        return ResponseEntity.noContent().build();
+    }
+
     private Map<String, Object> body(boolean valid) {
         Map<String, Object> m = new HashMap<>();
         m.put("valid", valid);

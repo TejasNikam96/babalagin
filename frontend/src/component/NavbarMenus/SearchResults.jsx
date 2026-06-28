@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
+import NotActiveTag from "../NotActiveTag";
 
 function Avatar({ p }) {
   return (
@@ -70,9 +71,12 @@ export default function SearchResults() {
                       <div>
                         <h3 className="font-bold text-[#7a1224] text-lg leading-tight">{p.name}</h3>
                         <p className="text-xs text-gray-500">{p.registrationCode}</p>
-                        <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full bg-[#fdf3da] text-[#7a1224] border border-[#f0e4c8]">
-                          {p.gender || "—"}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#fdf3da] text-[#7a1224] border border-[#f0e4c8]">
+                            {p.gender || "—"}
+                          </span>
+                          <NotActiveTag isActive={p.isActive} />
+                        </div>
                       </div>
                     </div>
                     <div className="mt-4 text-sm text-gray-700 space-y-1">

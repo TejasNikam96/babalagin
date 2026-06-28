@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { MessageCircle, Search } from "lucide-react";
 import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR } from "../../utils/avatar";
+import NotActiveTag from "../NotActiveTag";
+import { downloadProfilePdf } from "../../utils/profilePdf";
 
 function prettyLabel(k) {
   return k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -105,9 +107,12 @@ export default function SingleIdSearch() {
             <div className="bg-gradient-to-br from-[#6B0F2B] to-[#8B1538] text-white p-5 flex items-center gap-4">
               <img src={photo || DEFAULT_AVATAR} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }} />
               <div>
-                <h2 className="text-xl font-bold">
-                  {p.personal ? `${p.personal.firstName || ""} ${p.personal.lastName || ""}`.trim() : p.registrationCode}
-                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-bold">
+                    {p.personal ? `${p.personal.firstName || ""} ${p.personal.lastName || ""}`.trim() : p.registrationCode}
+                  </h2>
+                  <NotActiveTag isActive={p.isActive} />
+                </div>
                 <p className="text-amber-200/90 text-sm">{p.registrationCode} · {p.personal?.maritalStatus || ""}</p>
                 <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full ${accepted ? "bg-green-600" : "bg-white/15"}`}>
                   {accepted ? "✓ Accepted — full details" : "Limited details (connect to view contact)"}
@@ -123,6 +128,15 @@ export default function SingleIdSearch() {
               <Section title="Address" data={p.address} />
               <Section title="Family" data={p.family} />
               <Section title="Expectation" data={p.expectation} />
+            </div>
+            <div className="px-5 pb-5 flex justify-end border-t border-[#f0e4c8] pt-4">
+              <button
+                type="button"
+                onClick={() => { if (!downloadProfilePdf(p, photo)) setError("Please allow pop-ups to download the PDF."); }}
+                className="flex items-center gap-2 bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold px-5 py-2.5 rounded-sm shadow-sm transition-all"
+              >
+                ⬇ Download PDF
+              </button>
             </div>
           </div>
         )}

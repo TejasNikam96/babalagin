@@ -23,10 +23,12 @@ public class ProfileSummary {
     private String nativePlace;
     private String community;
     private String maritalStatus;
+    private String isActive; // "Y" / "N" -> UI shows a "Not Active" tag when "N"
 
     public static ProfileSummary from(Registration r) {
         ProfileSummary p = new ProfileSummary();
         p.registrationCode = r.getRegistrationCode();
+        p.isActive = r.getIsActive();
         Personal per = r.getPersonal();
         if (per != null) {
             String first = per.getFirstName() != null ? per.getFirstName() : "";
@@ -84,4 +86,5 @@ public class ProfileSummary {
     public String getNativePlace() { return nativePlace; }
     public String getCommunity() { return community; }
     public String getMaritalStatus() { return maritalStatus; }
+    public String getIsActive() { return isActive; }
 }
