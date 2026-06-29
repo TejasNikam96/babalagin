@@ -59,6 +59,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private com.example.login.dto.ProfileSummary toSummary(Registration r) {
         com.example.login.dto.ProfileSummary ps = com.example.login.dto.ProfileSummary.from(r);
         ps.setPhoto(documentService.getProfileImageDataUrl(ps.getRegistrationCode()));
+        ps.setPhotoCount((int) documentService.countImages(ps.getRegistrationCode()));
         return ps;
     }
 
@@ -269,6 +270,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         m.put("active", repository.countByIsActive("Y"));
         m.put("inactive", repository.countByIsActive("N"));
         m.put("successStories", (long) getSuccessStories().size());
+        java.time.LocalDateTime monthStart = java.time.LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        m.put("expiringThisMonth", repository.countExpiringBetween(monthStart, monthStart.plusMonths(1)));
         m.put("totalRegistrations", repository.count());
         return m;
     }

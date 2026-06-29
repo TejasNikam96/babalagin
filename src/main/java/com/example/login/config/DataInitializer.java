@@ -134,7 +134,33 @@ public class DataInitializer {
             // Mark a couple of pairs as success stories (linked via partnerId).
             linkSuccessCouple(repo, "dummy1@example.com", "dummy6@example.com");
             linkSuccessCouple(repo, "dummy2@example.com", "dummy7@example.com");
+
+            // Give every profile a payment-expiry date if it doesn't have one yet.
+            backfillRenewalDates(repo);
         };
+    }
+
+    private final java.util.Random rnd = new java.util.Random();
+
+    /**
+     * Sets a random payment/renewal expiry date for any profile whose expiry is
+     * empty. Dates are spread from the start of the current month over ~5 months,
+     * so several land in the current month (idempotent: never overwrites an
+     * existing date).
+     */
+    private void backfillRenewalDates(RegistrationRepository repo) {
+        java.time.LocalDateTime monthStart = java.time.LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        int updated = 0;
+        for (Registration r : repo.findAll()) {
+            if (r.getRenewedUntil() == null) {
+                r.setRenewedUntil(monthStart.plusDays(rnd.nextInt(160)).plusHours(rnd.nextInt(24)));
+                repo.save(r);
+                updated++;
+            }
+        }
+        if (updated > 0) {
+            log.info("Backfilled random payment-expiry dates for {} profile(s).", updated);
+        }
     }
 
     /** Rotating offset so different dummy users get different photos from the pool. */

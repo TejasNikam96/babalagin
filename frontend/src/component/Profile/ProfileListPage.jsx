@@ -33,6 +33,7 @@ function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage }) {
               <ProfilePhoto
                 code={p.registrationCode}
                 src={photo}
+                count={p.photoCount}
                 alt={`${p.registrationCode} profile`}
                 className="w-full h-full object-cover"
               />

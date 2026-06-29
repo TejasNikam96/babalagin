@@ -21,4 +21,7 @@ public interface DocumentService {
 
     /** Latest profile image for a user as a data URL, or null if none. */
     String getProfileImageDataUrl(String registrationCode);
+
+    /** Number of profile images a user has (cheap count). */
+    long countImages(String registrationCode);
 }

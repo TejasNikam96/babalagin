@@ -12,6 +12,7 @@ function Avatar({ p }) {
     <ProfilePhoto
       code={p.registrationCode}
       src={photoOf(p)}
+      count={p.photoCount}
       alt={`${p.registrationCode} profile`}
       className="w-16 h-16 rounded-full object-cover border-2 border-[#f0b429]"
     />

@@ -10,6 +10,7 @@ public class ProfileSummary {
 
     private String registrationCode;
     private String photo; // profile image data URL (from documents table)
+    private int photoCount; // number of photos (for the "multiple photos" badge)
     private String name;
     private String gender;
     private Integer age;
@@ -73,6 +74,8 @@ public class ProfileSummary {
     public String getRegistrationCode() { return registrationCode; }
     public String getPhoto() { return photo; }
     public void setPhoto(String photo) { this.photo = photo; }
+    public int getPhotoCount() { return photoCount; }
+    public void setPhotoCount(int photoCount) { this.photoCount = photoCount; }
     public String getName() { return name; }
     public String getGender() { return gender; }
     public Integer getAge() { return age; }

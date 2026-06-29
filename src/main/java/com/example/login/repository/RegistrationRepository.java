@@ -31,6 +31,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     /** Count registrations by active flag ("Y"/"N") for the admin dashboard. */
     long countByIsActive(String isActive);
 
+    /** Count profiles whose renewal/payment expiry falls in [start, end). */
+    @Query("select count(r) from Registration r where r.renewedUntil >= :start and r.renewedUntil < :end")
+    long countExpiringBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
     @Query("select r from Registration r where lower(r.personal.email) = lower(:email)")
     Optional<Registration> findByEmail(@Param("email") String email);
 

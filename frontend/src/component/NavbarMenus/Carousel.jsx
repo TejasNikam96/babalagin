@@ -65,8 +65,8 @@ export default function Carousel({
   const [ageFrom, setAgeFrom] = useState("22");
   const [ageTo, setAgeTo] = useState("30");
   const [education, setEducation] = useState("Any");
-  const [city, setCity] = useState("Pune");
-  const [community, setCommunity] = useState("Marathi");
+  const [city, setCity] = useState("Any");
+  const [community, setCommunity] = useState("Any");
 
   // respect prefers-reduced-motion: keep the photo, skip the zoom
   useEffect(() => {
@@ -106,9 +106,9 @@ export default function Carousel({
     if (to) params.set("lookingFor", to);            // "Bride" / "Groom"
     if (ageFrom) params.set("ageFrom", ageFrom);
     if (ageTo) params.set("ageTo", ageTo);
-    if (education) params.set("education", education);
-    if (city) params.set("location", city);
-    if (community) params.set("community", community);
+    if (education && education !== "Any") params.set("education", education);
+    if (city && city !== "Any") params.set("location", city);
+    if (community && community !== "Any") params.set("community", community);
     navigate(`/search/results?${params.toString()}`);
   }
 
@@ -255,6 +255,7 @@ export default function Carousel({
                 onChange={(e) => setCity(e.target.value)}
                 className="w-full mt-1 px-3 py-2 rounded border border-[#d8c39a] bg-white text-sm text-[#3a0613] focus:outline-none focus:ring-2 focus:ring-[#7a1224]/50"
               >
+                <option>Any</option>
                 <option>Pune</option>
                 <option>Mumbai</option>
                 <option>Nashik</option>
@@ -274,6 +275,7 @@ export default function Carousel({
               onChange={(e) => setCommunity(e.target.value)}
               className="w-full mt-1 px-3 py-2 rounded border border-[#d8c39a] bg-white text-sm text-[#3a0613] focus:outline-none focus:ring-2 focus:ring-[#7a1224]/50"
             >
+              <option>Any</option>
               <option>Marathi</option>
               <option>Maratha</option>
               <option>Deshastha</option>

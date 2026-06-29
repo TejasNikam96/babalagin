@@ -194,6 +194,7 @@ public class NotificationService {
             .map(r -> {
                 ProfileSummary ps = ProfileSummary.from(r);
                 ps.setPhoto(documentService.getProfileImageDataUrl(ps.getRegistrationCode()));
+                ps.setPhotoCount((int) documentService.countImages(ps.getRegistrationCode()));
                 return ps;
             })
             .collect(Collectors.toList());

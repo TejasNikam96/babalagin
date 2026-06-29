@@ -7,6 +7,7 @@ const CARDS = [
   { key: "active", label: "Active Profiles", hint: "isActive = Y", color: "#1b7a3d", bg: "#e8f7ee" },
   { key: "inactive", label: "Inactive Profiles", hint: "isActive = N", color: "#9a1b1b", bg: "#fdeaea" },
   { key: "successStories", label: "Success Stories", hint: "matched couples", color: "#7a1224", bg: "#fbe9ef" },
+  { key: "expiringThisMonth", label: "Expiring This Month", hint: "payment expiry in current month", color: "#b5790a", bg: "#fff3da" },
   { key: "totalRegistrations", label: "Total Registrations", hint: "all profiles", color: "#33415c", bg: "#eef1f7" },
 ];
 

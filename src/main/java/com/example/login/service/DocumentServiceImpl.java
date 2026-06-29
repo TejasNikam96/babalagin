@@ -65,6 +65,12 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countImages(String registrationCode) {
+        return repository.countImages(registrationCode);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public String getProfileImageDataUrl(String registrationCode) {
         return getLatestByType(registrationCode, "profileImage")
             .map(d -> {

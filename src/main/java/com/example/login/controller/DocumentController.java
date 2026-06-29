@@ -50,6 +50,14 @@ public class DocumentController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /** Lightweight photo count for a user (for the "multiple photos" badge). */
+    @GetMapping("/image-count")
+    public java.util.Map<String, Object> imageCount(@RequestParam("registrationCode") String registrationCode) {
+        java.util.Map<String, Object> m = new java.util.HashMap<>();
+        m.put("count", service.countImages(registrationCode));
+        return m;
+    }
+
     /** All profile images for a user (newest first), as data URLs — for the gallery/lightbox. */
     @GetMapping("/images")
     public java.util.List<DocumentResponse> images(@RequestParam("registrationCode") String registrationCode) {
