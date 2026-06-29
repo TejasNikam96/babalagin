@@ -47,6 +47,14 @@ public class Payment {
     @Column(name = "screenshot_content_type")
     private String screenshotContentType;
 
+    /** "NEW" (registration) or "RENEWAL". Renewal payments reactivate the profile on verify. */
+    @Column(name = "payment_type")
+    private String paymentType;
+
+    /** For renewal payments: number of months the renewal covers. */
+    @Column(name = "renewal_months")
+    private Integer renewalMonths;
+
     /** Verification status, e.g. PENDING_VERIFICATION / VERIFIED / REJECTED. */
     private String status;
 
@@ -64,6 +72,9 @@ public class Payment {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
             this.status = "PENDING_VERIFICATION";
+        }
+        if (this.paymentType == null) {
+            this.paymentType = "NEW";
         }
     }
 
@@ -90,6 +101,12 @@ public class Payment {
 
     public String getScreenshotContentType() { return screenshotContentType; }
     public void setScreenshotContentType(String screenshotContentType) { this.screenshotContentType = screenshotContentType; }
+
+    public String getPaymentType() { return paymentType; }
+    public void setPaymentType(String paymentType) { this.paymentType = paymentType; }
+
+    public Integer getRenewalMonths() { return renewalMonths; }
+    public void setRenewalMonths(Integer renewalMonths) { this.renewalMonths = renewalMonths; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

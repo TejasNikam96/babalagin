@@ -66,6 +66,7 @@ const COLS = [
   { h: "Partner ID", g: (x) => reg(x).partnerId },
   { h: "Created", g: (x) => fmt(reg(x).createdDate) },
   { h: "Updated", g: (x) => fmt(reg(x).updatedDate) },
+  { h: "Renewal Date", g: (x) => fmt(reg(x).renewedUntil) },
   { h: "Payment", g: (x) => x.paymentStatus },
 ];
 

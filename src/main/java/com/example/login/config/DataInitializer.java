@@ -126,7 +126,7 @@ public class DataInitializer {
                     saved.setRegistrationCode(String.format("REG%05d", saved.getId()));
                     repo.save(saved);
                 }
-                ensureAvatar(docRepo, saved.getRegistrationCode(), d[4]);
+                seedPhotos(docRepo, saved.getRegistrationCode(), d[4]);
                 upserted++;
             }
             log.info("Seeded/updated {} dummy profiles.", upserted);
@@ -137,30 +137,62 @@ public class DataInitializer {
         };
     }
 
-    /** Seeds a base64 SVG avatar into the documents table for a profile (if it has none). */
-    private void ensureAvatar(DocumentRepository docRepo, String code, String gender) {
+    /** Rotating offset so different dummy users get different photos from the pool. */
+    private int photoOffset = 0;
+
+    /**
+     * Seeds 3 gender-matched royalty-free portrait photos (base64) into the
+     * documents table for a profile. Removes any old gray SVG placeholder, and
+     * is idempotent (skips if the profile already has real photos). Photo files
+     * live in src/main/resources/seed-photos (downloaded from randomuser.me,
+     * which are free to use).
+     */
+    private void seedPhotos(DocumentRepository docRepo, String code, String gender) {
         if (code == null) {
             return;
         }
-        if (docRepo.findFirstByRegistrationCodeAndDocTypeOrderByIdDesc(code, "profileImage").isPresent()) {
-            return;
+        java.util.List<Document> existing = docRepo.findByRegistrationCodeOrderByIdDesc(code).stream()
+            .filter(d -> d.getDocType() == null || "profileImage".equalsIgnoreCase(d.getDocType()))
+            .collect(java.util.stream.Collectors.toList());
+
+        // Remove the legacy gray SVG placeholder avatars.
+        for (Document d : existing) {
+            if ("image/svg+xml".equalsIgnoreCase(d.getContentType())) {
+                docRepo.delete(d);
+            }
         }
-        String bg = "Bride".equalsIgnoreCase(gender) ? "#7a1224" : "#3a0613";
-        String label = gender != null ? gender : "Profile";
-        String svg = "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='320'>"
-            + "<rect width='240' height='320' fill='" + bg + "'/>"
-            + "<circle cx='120' cy='118' r='58' fill='#f0b429'/>"
-            + "<path d='M40 300c0-56 36-96 80-96s80 40 80 96z' fill='#f0b429'/>"
-            + "<text x='120' y='314' font-family='Arial' font-size='15' fill='#fdf3da' text-anchor='middle'>" + label + "</text>"
-            + "</svg>";
-        String b64 = java.util.Base64.getEncoder().encodeToString(svg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        Document doc = new Document();
-        doc.setRegistrationCode(code);
-        doc.setDocType("profileImage");
-        doc.setFileName("avatar.svg");
-        doc.setContentType("image/svg+xml");
-        doc.setDataBase64(b64);
-        docRepo.save(doc);
+        long realPhotos = existing.stream()
+            .filter(d -> !"image/svg+xml".equalsIgnoreCase(d.getContentType())).count();
+        if (realPhotos >= 2) {
+            return; // already has real photos
+        }
+
+        String prefix = "Bride".equalsIgnoreCase(gender) ? "women" : "men";
+        int offset = photoOffset++;
+        int added = 0;
+        for (int k = 0; k < 3; k++) {
+            int idx = ((offset * 3 + k) % 6) + 1; // pool of 6 images per gender
+            byte[] bytes = readClasspathBytes("seed-photos/" + prefix + "_" + idx + ".jpg");
+            if (bytes == null) continue;
+            Document doc = new Document();
+            doc.setRegistrationCode(code);
+            doc.setDocType("profileImage");
+            doc.setFileName(prefix + "_" + idx + ".jpg");
+            doc.setContentType("image/jpeg");
+            doc.setDataBase64(java.util.Base64.getEncoder().encodeToString(bytes));
+            docRepo.save(doc);
+            added++;
+        }
+        log.info("Seeded {} photo(s) for {}", added, code);
+    }
+
+    private byte[] readClasspathBytes(String path) {
+        try (java.io.InputStream is = new org.springframework.core.io.ClassPathResource(path).getInputStream()) {
+            return org.springframework.util.StreamUtils.copyToByteArray(is);
+        } catch (Exception e) {
+            log.warn("Seed photo not found on classpath: {}", path);
+            return null;
+        }
     }
 
     /** Links two profiles as a success-story couple (successStory=Y + partnerId cross). */

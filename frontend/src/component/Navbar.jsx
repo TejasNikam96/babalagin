@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../Slices/authSlice";
 import NotificationPanel from "./NavbarMenus/NotificationPanel";
+import MyProfileModal from "./MyProfileModal";
 
 /** Placeholder avatar shown when the user has no profile photo. */
 function DummyAvatar() {
@@ -67,7 +68,7 @@ export default function Navbar() {
 
   // Profile photo (from the documents table) for the logged-in user.
   const [profileImg, setProfileImg] = useState(null);
-  const fileInputRef = useRef(null);
+  const [showProfile, setShowProfile] = useState(false); // My Profile edit popup
 
   useEffect(() => {
     let active = true;
@@ -82,29 +83,7 @@ export default function Navbar() {
     return () => { active = false; };
   }, [user]);
 
-  const openProfileUpload = () => fileInputRef.current && fileInputRef.current.click();
-
-  const handleProfileUpload = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file || !user) return;
-    const fd = new FormData();
-    fd.append("registrationCode", user.registrationCode);
-    fd.append("docType", "profileImage");
-    fd.append("file", file);
-    try {
-      const res = await fetch("/api/documents/upload", { method: "POST", body: fd });
-      if (res.ok) {
-        const d = await res.json();
-        setProfileImg(d.dataUrl);
-      } else {
-        alert("Failed to upload photo. Please try again.");
-      }
-    } catch (_) {
-      alert("Failed to upload photo. Please try again.");
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
+  const openMyProfile = () => setShowProfile(true);
 
   const handleLogout = () => {
     // Invalidate the server-side session token (best-effort), then clear the
@@ -223,11 +202,11 @@ export default function Navbar() {
           {/* After-logo: profile photo + greeting + divider (desktop, when logged in) */}
           {user && (
             <div className="hidden lg:flex items-center gap-3 shrink-0">
-              {/* profile photo box - click to upload / change */}
+              {/* profile photo box - click to open My Profile */}
               <button
                 type="button"
-                onClick={openProfileUpload}
-                title="Click to set / change your profile photo"
+                onClick={openMyProfile}
+                title="View / edit your profile"
                 className="w-11 h-11 rounded-md overflow-hidden border-2 border-[#f0b429]/60 bg-[#5c0a1e] flex items-center justify-center hover:border-[#f0b429] transition-colors"
               >
                 {profileImg ? (
@@ -237,7 +216,7 @@ export default function Navbar() {
                 )}
               </button>
 
-              <button type="button" onClick={openProfileUpload} className="leading-tight text-left">
+              <button type="button" onClick={openMyProfile} className="leading-tight text-left">
                 <p className="text-[#f0b429] font-semibold text-sm whitespace-nowrap">
                   Hello, {user.name || "User"}
                 </p>
@@ -247,15 +226,6 @@ export default function Navbar() {
               </button>
 
               <span className="h-10 w-px bg-white/40" />
-
-              {/* hidden file input shared by desktop & mobile profile-photo upload */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleProfileUpload}
-              />
             </div>
           )}
 
@@ -429,11 +399,11 @@ export default function Navbar() {
               )
             )}
 
-            {/* Mobile greeting + profile photo (click to upload) when logged in */}
+            {/* Mobile greeting + profile photo (click to open My Profile) when logged in */}
             {user && (
               <button
                 type="button"
-                onClick={openProfileUpload}
+                onClick={() => { openMyProfile(); setOpen(false); }}
                 className="py-2 border-b border-white/10 flex items-center gap-3 text-left w-full"
               >
                 <span className="w-10 h-10 rounded-md overflow-hidden border-2 border-[#f0b429]/60 bg-[#5c0a1e] flex items-center justify-center shrink-0">
@@ -493,6 +463,17 @@ export default function Navbar() {
         onClose={() => setIsNotificationOpen(false)}
         onChanged={refreshUnread}
       />
+
+      {/* My Profile edit popup (opened from the name/photo greeting) */}
+      {showProfile && user && (
+        <MyProfileModal
+          code={user.registrationCode}
+          token={user.token}
+          currentPhoto={profileImg}
+          onPhotoChange={setProfileImg}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
 
       {/* Spacer so fixed navbar doesn't cover page content underneath it */}
       <div className="h-[80px]" />

@@ -50,9 +50,12 @@ public class PaymentController {
             @RequestParam(value = "upiId", required = false) String upiId,
             @RequestParam(value = "amount", required = false) String amount,
             @RequestParam(value = "registrationId", required = false) String registrationId,
-            @RequestParam(value = "screenshot", required = false) MultipartFile screenshot) {
+            @RequestParam(value = "screenshot", required = false) MultipartFile screenshot,
+            @RequestParam(value = "paymentType", required = false) String paymentType,
+            @RequestParam(value = "renewalMonths", required = false) Integer renewalMonths) {
 
-        Payment saved = service.verifyPayment(registrationId, transactionId, upiId, amount, screenshot);
+        Payment saved = service.verifyPayment(registrationId, transactionId, upiId, amount, screenshot,
+                paymentType, renewalMonths);
         PaymentResponse body = new PaymentResponse(
             saved.getId(),
             saved.getRegistrationId(),

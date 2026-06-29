@@ -231,6 +231,38 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional(readOnly = true)
+    public Registration getByRegistrationCode(String registrationCode) {
+        return repository.findByRegistrationCode(registrationCode)
+            .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationCode));
+    }
+
+    @Override
+    @Transactional
+    public Registration selfUpdate(String registrationCode, Registration incoming) {
+        Registration existing = repository.findByRegistrationCode(registrationCode)
+            .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationCode));
+
+        com.example.login.entity.Personal p = incoming.getPersonal();
+        if (p != null) {
+            // Email is NOT editable by the user -> keep the existing one.
+            p.setEmail(existing.getPersonal() != null ? existing.getPersonal().getEmail() : null);
+            p.setHeightTotalInches(toInches(p.getHeightFeet(), p.getHeightInches()));
+        }
+        existing.setPersonal(p);
+        existing.setHoroscope(incoming.getHoroscope());
+        existing.setEducation(incoming.getEducation());
+        existing.setAddress(incoming.getAddress());
+        existing.setFamily(incoming.getFamily());
+        existing.setExpectation(incoming.getExpectation());
+        // id, registrationCode, isActive, successStory, partnerId, renewedUntil are preserved.
+
+        Registration result = repository.save(existing);
+        log.info("Self-update by owner: code={}", registrationCode);
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public java.util.Map<String, Long> getDashboardStats() {
         java.util.Map<String, Long> m = new java.util.LinkedHashMap<>();
         m.put("drafts", tempRepository.count());

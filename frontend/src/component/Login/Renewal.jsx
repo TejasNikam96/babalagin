@@ -55,7 +55,7 @@ export default function Renewal({ onSubmit }) {
         await new Promise((res) => setTimeout(res, 900)); // demo only
       }
     } catch (err) {
-      setError("Something went wrong during renewal. Please try again.");
+      setError(err?.message || "Something went wrong during renewal. Please try again.");
       refreshCaptcha();
     } finally {
       setLoading(false);

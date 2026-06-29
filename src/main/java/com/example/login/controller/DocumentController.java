@@ -49,4 +49,13 @@ public class DocumentController {
         return doc.map(d -> ResponseEntity.ok(DocumentResponse.from(d)))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    /** All profile images for a user (newest first), as data URLs — for the gallery/lightbox. */
+    @GetMapping("/images")
+    public java.util.List<DocumentResponse> images(@RequestParam("registrationCode") String registrationCode) {
+        return service.getByRegistrationCode(registrationCode).stream()
+            .filter(d -> d.getDocType() == null || "profileImage".equalsIgnoreCase(d.getDocType()))
+            .map(DocumentResponse::from)
+            .collect(java.util.stream.Collectors.toList());
+    }
 }

@@ -70,6 +70,10 @@ public class Registration {
     @Column(name = "partner_id", length = 20)
     private String partnerId;
 
+    /** When the current renewal expires (set when an admin verifies a RENEWAL payment). */
+    @Column(name = "renewed_until")
+    private LocalDateTime renewedUntil;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -126,4 +130,7 @@ public class Registration {
 
     public String getPartnerId() { return partnerId; }
     public void setPartnerId(String partnerId) { this.partnerId = partnerId; }
+
+    public LocalDateTime getRenewedUntil() { return renewedUntil; }
+    public void setRenewedUntil(LocalDateTime renewedUntil) { this.renewedUntil = renewedUntil; }
 }

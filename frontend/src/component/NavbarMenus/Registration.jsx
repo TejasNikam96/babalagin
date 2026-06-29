@@ -147,7 +147,8 @@ const FieldSplit = ({ label, required, error, children }) => (
 /* Payment Dialog Component                                                */
 /* ----------------------------------------------------------------------- */
 
-const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading }) => {
+export const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading, amount = 1000, feeLabel = "Registration Fee", title = "Make Payment" }) => {
+  const amountStr = `₹${Number(amount).toLocaleString("en-IN")}`;
   const [transactionId, setTransactionId] = useState('');
   const [screenshot, setScreenshot] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
@@ -194,7 +195,7 @@ const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading }) => {
       transactionId: transactionId.trim(),
       screenshot: screenshot,
       upiId: UPI_ID,
-      amount: 1000,
+      amount: amount,
     };
 
     onPaymentSubmit(paymentData);
@@ -221,15 +222,15 @@ const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading }) => {
     <div className="ef-dialog-overlay" onClick={handleClose}>
       <div className="ef-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="ef-dialog__header">
-          <h2 className="ef-dialog__title">Make Payment</h2>
+          <h2 className="ef-dialog__title">{title}</h2>
           <button className="ef-dialog__close" onClick={handleClose}>×</button>
         </div>
 
         <div className="ef-dialog__body">
           <div className="ef-payment-details">
             <div className="ef-payment-amount">
-              <span className="ef-payment-label">Registration Fee:</span>
-              <span className="ef-payment-value">₹1,000</span>
+              <span className="ef-payment-label">{feeLabel}:</span>
+              <span className="ef-payment-value">{amountStr}</span>
             </div>
 
             <div className="ef-payment-methods">
@@ -237,7 +238,7 @@ const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading }) => {
               
               <div className="ef-payment-qr-section">
                 <div style={{ border: "2px dashed #b8860b", borderRadius: 12, padding: 16, textAlign: "center", background: "#fdf3da" }}>
-                  <p style={{ margin: 0, fontSize: 13, color: "#7a1224", fontWeight: 700 }}>Pay ₹1,000 via UPI</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#7a1224", fontWeight: 700 }}>Pay {amountStr} via UPI</p>
                   <p style={{ margin: "6px 0 0", fontSize: 18, fontWeight: 800, color: "#3a0613" }}>{UPI_ID}</p>
                   <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8a6f75" }}>Open any UPI app and pay to the above UPI ID</p>
                 </div>

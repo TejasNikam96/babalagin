@@ -56,4 +56,14 @@ public interface RegistrationService {
 
     /** Counts for the admin dashboard (drafts, active, inactive, success stories, total). */
     java.util.Map<String, Long> getDashboardStats();
+
+    /** Full registration by code (no field stripping) - for the owner's own profile view. */
+    Registration getByRegistrationCode(String registrationCode);
+
+    /**
+     * Self-service edit by the profile owner: updates the six form sections but
+     * preserves id, registrationCode, email, and admin-only flags (isActive,
+     * successStory, partnerId, renewedUntil).
+     */
+    Registration selfUpdate(String registrationCode, Registration incoming);
 }

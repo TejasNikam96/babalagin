@@ -5,6 +5,7 @@ import { DEFAULT_AVATAR } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
 import { downloadProfilePdf } from "../../utils/profilePdf";
 import ChatModal from "../ChatModal";
+import ProfilePhoto from "../ProfilePhoto";
 
 function prettyLabel(k) {
   return k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -117,7 +118,7 @@ export default function SingleIdSearch() {
         {p && (
           <div className="mt-8 border border-[#f0e4c8] rounded-xl overflow-hidden">
             <div className="bg-gradient-to-br from-[#6B0F2B] to-[#8B1538] text-white p-5 flex items-center gap-4">
-              <img src={photo || DEFAULT_AVATAR} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }} />
+              <ProfilePhoto code={p.registrationCode} src={photo || DEFAULT_AVATAR} className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl font-bold">

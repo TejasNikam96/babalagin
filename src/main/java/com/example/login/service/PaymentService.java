@@ -14,7 +14,8 @@ public interface PaymentService {
      * returns the saved entity.
      */
     Payment verifyPayment(String registrationId, String transactionId, String upiId,
-                          String amount, MultipartFile screenshot);
+                          String amount, MultipartFile screenshot,
+                          String paymentType, Integer renewalMonths);
 
     Payment getById(Long id);
 

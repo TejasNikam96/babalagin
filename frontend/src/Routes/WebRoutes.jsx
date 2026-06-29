@@ -12,7 +12,7 @@ import UnmarriedBrides from "../component/Profile/UnmarriedBrides";
 import DivorcedGrooms from "../component/Profile/DivorsedGrooms";
 import DivorcedBrides from "../component/Profile/DivorsedBridals";
 import Login from "../component/Login/Login";
-import Renewal from "../component/Login/Renewal";
+import RenewalPage from "../component/Login/RenewalPage";
 import ContactUs from "../component/ContactUs";
 import ProfileDetails from "../component/Profile/ProfileDetails";
 import ProfileListPage from "../component/Profile/ProfileListPage";
@@ -61,7 +61,7 @@ return(
       <Route path ="profile/divorsed/grooms" element ={<DivorcedGrooms/>} />
        <Route path ="profile/divorsed/brides" element ={<DivorcedBrides/>} />
        <Route path ="/login" element ={<Login/>} />
-       <Route path ="/renewal" element ={<Renewal/>} />
+       <Route path ="/renewal" element ={<RenewalPage/>} />
        <Route path ="/contact-us" element ={<ContactUs/>} />
        <Route path ="accepted" element ={<ProfileListPage title="Accepted Profiles" mode="accepted" />} />
        <Route path ="success-stories" element ={<SuccessStories/>} />

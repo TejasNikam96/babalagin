@@ -76,6 +76,18 @@ public class SessionService {
         return authenticate(token).isPresent();
     }
 
+    /** The principal (e.g. registrationCode) for a live token, without extending it. */
+    public Optional<String> principalOf(String token) {
+        if (token == null) return Optional.empty();
+        Session s = sessions.get(token);
+        if (s == null) return Optional.empty();
+        if (isExpired(s)) {
+            sessions.remove(token);
+            return Optional.empty();
+        }
+        return Optional.of(s.principal);
+    }
+
     /**
      * Records activity: extends the idle window if the session is still live.
      * Returns false (and removes the entry) if it was already expired/unknown.

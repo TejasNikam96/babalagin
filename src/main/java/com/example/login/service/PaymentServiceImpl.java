@@ -26,29 +26,38 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
+    /** Default validity (months) granted when an initial NEW registration payment is verified. */
+    private static final int DEFAULT_NEW_MONTHS = 6;
+
     private final PaymentRepository repository;
     private final NotificationService notificationService;
+    private final com.example.login.repository.RegistrationRepository registrationRepository;
     private final Path uploadDir;
 
     public PaymentServiceImpl(PaymentRepository repository,
                               NotificationService notificationService,
+                              com.example.login.repository.RegistrationRepository registrationRepository,
                               @Value("${app.upload.dir:uploads/payments}") String uploadDir) {
         this.repository = repository;
         this.notificationService = notificationService;
+        this.registrationRepository = registrationRepository;
         this.uploadDir = Paths.get(uploadDir).toAbsolutePath().normalize();
     }
 
     @Override
     @Transactional
     public Payment verifyPayment(String registrationId, String transactionId, String upiId,
-                                 String amount, MultipartFile screenshot) {
-        log.info("Payment submission: regId={}, txn={}, amount={}, hasScreenshot={}",
-                registrationId, transactionId, amount, screenshot != null && !screenshot.isEmpty());
+                                 String amount, MultipartFile screenshot,
+                                 String paymentType, Integer renewalMonths) {
+        log.info("Payment submission: regId={}, txn={}, amount={}, type={}, hasScreenshot={}",
+                registrationId, transactionId, amount, paymentType, screenshot != null && !screenshot.isEmpty());
         Payment payment = new Payment();
         payment.setRegistrationId(registrationId);
         payment.setTransactionId(transactionId);
         payment.setUpiId(upiId);
         payment.setAmount(amount);
+        payment.setPaymentType(paymentType != null && !paymentType.trim().isEmpty() ? paymentType.trim().toUpperCase() : "NEW");
+        payment.setRenewalMonths(renewalMonths);
         payment.setStatus("PENDING_VERIFICATION");
 
         if (screenshot != null && !screenshot.isEmpty()) {
@@ -112,6 +121,26 @@ public class PaymentServiceImpl implements PaymentService {
         Payment saved = repository.save(payment);
         log.info("Payment status changed: id={}, regId={}, {} -> {}",
                 id, saved.getRegistrationId(), previous, status);
+
+        // A verified payment keeps the profile active and sets/extends its validity:
+        // RENEWAL uses the chosen months; NEW (initial registration) grants a default period.
+        if ("VERIFIED".equalsIgnoreCase(status) && saved.getRegistrationId() != null) {
+            final boolean renewal = "RENEWAL".equalsIgnoreCase(saved.getPaymentType());
+            final int months = renewal
+                ? (saved.getRenewalMonths() != null ? saved.getRenewalMonths() : 0)
+                : DEFAULT_NEW_MONTHS;
+            registrationRepository.findByRegistrationCode(saved.getRegistrationId()).ifPresent(reg -> {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                reg.setIsActive("Y");
+                // Extend from the existing expiry if it's still in the future, else from now.
+                java.time.LocalDateTime base = (reg.getRenewedUntil() != null && reg.getRenewedUntil().isAfter(now))
+                    ? reg.getRenewedUntil() : now;
+                if (months > 0) reg.setRenewedUntil(base.plusMonths(months));
+                registrationRepository.save(reg);
+                log.info("Payment verified ({}): {} active, renewedUntil={}",
+                        renewal ? "RENEWAL" : "NEW", reg.getRegistrationCode(), reg.getRenewedUntil());
+            });
+        }
 
         // Notify the registration owner about the payment decision.
         if (saved.getRegistrationId() != null) {

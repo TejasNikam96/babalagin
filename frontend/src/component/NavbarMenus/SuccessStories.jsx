@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
-import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
+import { photoOf } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
+import ProfilePhoto from "../ProfilePhoto";
 
 function Avatar({ p }) {
   return (
-    <img
+    <ProfilePhoto
+      code={p?.registrationCode}
       src={photoOf(p)}
       alt={p?.name || ""}
       className="w-24 h-24 rounded-full object-cover border-4 border-[#F2C14E] shadow"
-      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }}
     />
   );
 }

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
 import ChatModal from "../ChatModal";
+import ProfilePhoto from "../ProfilePhoto";
 
 /**
  * Shared, data-driven listing page for the Profile dropdown menus.
@@ -29,11 +30,11 @@ function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage }) {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-shrink-0 self-center sm:self-auto">
             <div className="relative w-24 h-28 sm:w-28 sm:h-32 rounded-lg overflow-hidden shadow-md">
-              <img
+              <ProfilePhoto
+                code={p.registrationCode}
                 src={photo}
                 alt={`${p.registrationCode} profile`}
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }}
               />
             </div>
             <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-[#6B0F2B] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
@@ -410,7 +411,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-[1000] overflow-y-auto" onClick={() => setDetail(null)}>
           <div className="bg-white rounded-2xl max-w-3xl w-full my-6 overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-br from-[#6B0F2B] to-[#8B1538] text-white p-5 flex items-center gap-4">
-              <img src={detail.photo || DEFAULT_AVATAR} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_AVATAR; }} />
+              <ProfilePhoto code={detail.registrationCode} src={detail.photo || DEFAULT_AVATAR} className="w-20 h-24 rounded-lg object-cover border-2 border-[#F2C14E]" />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl font-bold">
