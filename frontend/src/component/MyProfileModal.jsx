@@ -26,6 +26,7 @@ export default function MyProfileModal({ code, token, currentPhoto, onClose, onP
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [photo, setPhoto] = useState(currentPhoto);
+  const [likes, setLikes] = useState(null); // { count, likers: [code...] }
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -37,6 +38,16 @@ export default function MyProfileModal({ code, token, currentPhoto, onClose, onP
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [code, token]);
+
+  // Who liked my profile (owner-only).
+  useEffect(() => {
+    let active = true;
+    fetch("/api/likes/mine", { headers: { "X-Auth-Token": token || "" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (active && d) setLikes(d); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [token]);
 
   const setField = (section, key, value) =>
     setForm((f) => ({ ...f, [section]: { ...(f[section] || {}), [key]: value } }));
@@ -103,6 +114,23 @@ export default function MyProfileModal({ code, token, currentPhoto, onClose, onP
               <ReadOnly label="Registration ID" value={code} />
               <ReadOnly label="Email (not editable)" value={email} />
               <ReadOnly label="Payment Expiry" value={fmtDate(form.renewedUntil) || "—"} />
+            </div>
+
+            {/* Who liked my profile (only the owner sees this) */}
+            <div className="mb-5 bg-[#fbe9ef] border border-[#f0c9d6] rounded-lg p-3">
+              <p className="text-sm font-bold text-[#7A2238] flex items-center gap-1.5">
+                ❤️ {likes ? likes.count : 0} like(s) on your profile
+              </p>
+              {likes && likes.likers && likes.likers.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {likes.likers.map((c) => (
+                    <span key={c} className="text-[11px] bg-white border border-[#e3b9c6] text-[#6B0F2B] px-2 py-0.5 rounded-full">{c}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">No likes yet.</p>
+              )}
+              <p className="text-[10px] text-gray-400 mt-1">Only you can see who liked your profile.</p>
             </div>
 
             {notice && <div className="mb-3 bg-green-50 border border-green-300 text-green-800 text-sm px-3 py-2 rounded">{notice}</div>}

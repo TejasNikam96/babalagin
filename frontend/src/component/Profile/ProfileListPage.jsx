@@ -4,6 +4,7 @@ import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
 import ChatModal from "../ChatModal";
 import ProfilePhoto from "../ProfilePhoto";
+import LikeButton from "../LikeButton";
 
 /**
  * Shared, data-driven listing page for the Profile dropdown menus.
@@ -20,7 +21,7 @@ function InfoBadge({ icon, label, value }) {
   );
 }
 
-function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage }) {
+function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage, me, token, onNeedLogin }) {
   // Profile photo from our database (or local default).
   const photo = photoOf(p);
   return (
@@ -67,6 +68,7 @@ function ProfileCard({ p, accepted, onView, onInterest, onReject, onMessage }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 mt-2">
+              <LikeButton code={p.registrationCode} viewer={me} token={token} onNeedLogin={onNeedLogin} className="mr-1" />
               {accepted ? (
                 <>
                   <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Accepted</span>
@@ -348,7 +350,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
         ) : error ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm text-[#7A2238]">{error}</div>
         ) : visible.length > 0 ? (
-          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} onReject={handleReject} onMessage={handleMessage} />)
+          visible.map((p) => <ProfileCard key={p.registrationCode} p={p} accepted={acceptedSet.has(p.registrationCode)} onView={handleView} onInterest={handleInterest} onReject={handleReject} onMessage={handleMessage} me={user?.registrationCode} token={user?.token} onNeedLogin={(m) => setNotice(m)} />)
         ) : (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm">
             <div className="text-4xl mb-3">🔍</div>
@@ -441,13 +443,16 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
               )}
             </div>
             <div className="p-4 border-t flex flex-wrap items-center justify-between gap-3">
-              <button
-                onClick={handleDownload}
-                disabled={detailLoading}
-                className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold shadow-sm disabled:opacity-50"
-              >
-                ⬇ Download PDF
-              </button>
+              <div className="flex items-center gap-3">
+                <LikeButton code={detail.registrationCode} viewer={user?.registrationCode} token={user?.token} onNeedLogin={(m) => setNotice(m)} />
+                <button
+                  onClick={handleDownload}
+                  disabled={detailLoading}
+                  className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold shadow-sm disabled:opacity-50"
+                >
+                  ⬇ Download PDF
+                </button>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setDetail(null)} className="px-5 py-2 rounded-full border border-[#6B0F2B] text-[#6B0F2B] text-sm font-semibold">Close</button>
               {acceptedSet.has(detail.registrationCode) ? (

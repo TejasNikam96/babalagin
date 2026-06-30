@@ -6,6 +6,7 @@ import NotActiveTag from "../NotActiveTag";
 import { downloadProfilePdf } from "../../utils/profilePdf";
 import ChatModal from "../ChatModal";
 import ProfilePhoto from "../ProfilePhoto";
+import LikeButton from "../LikeButton";
 
 function prettyLabel(k) {
   return k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -142,7 +143,8 @@ export default function SingleIdSearch() {
               <Section title="Family" data={p.family} />
               <Section title="Expectation" data={p.expectation} />
             </div>
-            <div className="px-5 pb-5 flex flex-wrap justify-end gap-3 border-t border-[#f0e4c8] pt-4">
+            <div className="px-5 pb-5 flex flex-wrap items-center justify-end gap-3 border-t border-[#f0e4c8] pt-4">
+              <LikeButton code={p.registrationCode} viewer={user?.registrationCode} token={user?.token} onNeedLogin={(m) => setError(m)} className="mr-auto" />
               {accepted && (
                 <button
                   type="button"

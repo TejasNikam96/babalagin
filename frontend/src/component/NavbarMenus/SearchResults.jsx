@@ -6,6 +6,7 @@ import NotActiveTag from "../NotActiveTag";
 import ChatModal from "../ChatModal";
 import { downloadProfilePdf } from "../../utils/profilePdf";
 import ProfilePhoto from "../ProfilePhoto";
+import LikeButton from "../LikeButton";
 
 function Avatar({ p }) {
   return (
@@ -174,7 +175,8 @@ export default function SearchResults() {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <LikeButton code={p.registrationCode} viewer={user?.registrationCode} token={user?.token} onNeedLogin={(m) => setNotice(m)} className="mr-1" />
                       <button type="button" onClick={() => handleView(p)} className="bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-xs font-semibold px-3 py-1.5 rounded-full transition-colors">
                         View Profile
                       </button>
@@ -242,7 +244,10 @@ export default function SearchResults() {
               )}
             </div>
             <div className="p-4 border-t flex flex-wrap items-center justify-between gap-3">
-              <button onClick={() => { if (!downloadProfilePdf(detail, detail.photo)) setNotice("Please allow pop-ups to download the PDF."); }} className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold">⬇ Download PDF</button>
+              <div className="flex items-center gap-3">
+                <LikeButton code={detail.registrationCode} viewer={user?.registrationCode} token={user?.token} onNeedLogin={(m) => setNotice(m)} />
+                <button onClick={() => { if (!downloadProfilePdf(detail, detail.photo)) setNotice("Please allow pop-ups to download the PDF."); }} className="px-5 py-2 rounded-full bg-[#6B0F2B] hover:bg-[#8B1538] text-white text-sm font-semibold">⬇ Download PDF</button>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => setDetail(null)} className="px-5 py-2 rounded-full border border-[#6B0F2B] text-[#6B0F2B] text-sm font-semibold">Close</button>
                 {acceptedSet.has(detail.registrationCode) ? (
