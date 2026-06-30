@@ -39,6 +39,12 @@
             <artifactId>thymeleaf-extras-springsecurity5</artifactId>
         </dependency>
 
+        <!-- Email notifications (SMTP via JavaMailSender) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Persistence: JPA + Bean Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

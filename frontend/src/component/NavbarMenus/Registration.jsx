@@ -14,6 +14,7 @@ import {
   submitPayment,
   resetPaymentStatus,
 } from '../../Slices/registrationSlice';
+import { toast } from '../../utils/toast';
 
 // All your existing constants
 const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -178,7 +179,7 @@ export const PaymentDialog = ({ isOpen, onClose, onPaymentSubmit, isLoading, amo
 
   const handleCopyUPI = () => {
     navigator.clipboard.writeText(UPI_ID);
-    alert('UPI ID copied to clipboard!');
+    toast('UPI ID copied to clipboard!', 'success');
   };
 
   const handleSubmitPayment = () => {
@@ -700,7 +701,7 @@ const Registration = () => {
       setIsPaymentLoading(false);
     } catch (err) {
       setIsPaymentLoading(false);
-      alert('Payment submission failed. Please try again.');
+      toast('Payment submission failed. Please try again.', 'error');
     }
   };
 

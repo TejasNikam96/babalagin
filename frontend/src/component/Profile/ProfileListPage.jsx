@@ -5,6 +5,8 @@ import NotActiveTag from "../NotActiveTag";
 import ChatModal from "../ChatModal";
 import ProfilePhoto from "../ProfilePhoto";
 import LikeButton from "../LikeButton";
+import SkeletonCards from "../SkeletonCard";
+import { toast } from "../../utils/toast";
 
 /**
  * Shared, data-driven listing page for the Profile dropdown menus.
@@ -101,7 +103,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
   const [filterBy, setFilterBy] = useState("all");
   const [visibleCount, setVisibleCount] = useState(6);
   const [acceptedSet, setAcceptedSet] = useState(new Set()); // codes the user is connected with
-  const [notice, setNotice] = useState(null);       // error/info popup text
+  const setNotice = (m) => { if (m) toast(m); };     // info/error messages -> toast
   const [detail, setDetail] = useState(null);       // full profile for the View Profile popup
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmReject, setConfirmReject] = useState(null); // profile pending reject confirmation
@@ -346,7 +348,7 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
         {loading ? (
-          <div className="text-center py-12 text-[#6B0F2B]">Loading profiles…</div>
+          <SkeletonCards count={6} />
         ) : error ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm text-[#7A2238]">{error}</div>
         ) : visible.length > 0 ? (
@@ -395,16 +397,6 @@ export default function ProfileListPage({ title, gender, maritalStatus, mode }) 
                 {rejecting ? "Rejecting…" : "Reject"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notice popup (login-required / info messages) */}
-      {notice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[1100]" onClick={() => setNotice(null)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[#3a0613] font-semibold mb-4">{notice}</p>
-            <button onClick={() => setNotice(null)} className="px-6 py-2 rounded-full bg-[#6B0F2B] text-white text-sm font-semibold">OK</button>
           </div>
         </div>
       )}

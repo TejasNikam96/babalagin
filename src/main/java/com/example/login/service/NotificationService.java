@@ -22,15 +22,21 @@ public class NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
+    /** Notification types that also trigger an email to the recipient. */
+    private static final java.util.Set<String> EMAIL_TYPES = new java.util.HashSet<>(java.util.Arrays.asList(
+        "PAYMENT", "INTEREST_RECEIVED", "INTEREST_ACCEPTED"));
+
     private final NotificationRepository repository;
     private final RegistrationRepository registrationRepository;
     private final DocumentService documentService;
+    private final EmailService emailService;
 
     public NotificationService(NotificationRepository repository, RegistrationRepository registrationRepository,
-                              DocumentService documentService) {
+                              DocumentService documentService, EmailService emailService) {
         this.repository = repository;
         this.registrationRepository = registrationRepository;
         this.documentService = documentService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -44,7 +50,24 @@ public class NotificationService {
         n.setFromName(fromName);
         n.setStatus(status);
         n.setRead(false);
-        return repository.save(n);
+        Notification saved = repository.save(n);
+
+        // Email the recipient for important notifications (best-effort).
+        if (type != null && EMAIL_TYPES.contains(type)) {
+            String email = emailOf(toCode);
+            if (email != null) {
+                emailService.send(email, "BABA LAGIN — Notification",
+                    message + "\n\nLog in to BABA LAGIN to view details.\n\n— BABA LAGIN Vadhu-Var Kendra");
+            }
+        }
+        return saved;
+    }
+
+    /** Recipient's email for a registration code, or null. */
+    private String emailOf(String code) {
+        if (code == null) return null;
+        Registration r = registrationRepository.findByRegistrationCode(code).orElse(null);
+        return (r != null && r.getPersonal() != null) ? r.getPersonal().getEmail() : null;
     }
 
     @Transactional(readOnly = true)

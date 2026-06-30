@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { authHeader, clearAuth } from "./adminAuth";
 
 const fmt = (dt) => (dt ? String(dt).replace("T", " ").slice(0, 19) : "");
@@ -94,7 +94,14 @@ export default function AdminProfiles() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [f, setF] = useState({ gender: "", isActive: "", createdFrom: "", createdTo: "", paymentStatus: "" });
+  const [params] = useSearchParams();
+  const [f, setF] = useState(() => ({
+    gender: params.get("gender") || "",
+    isActive: params.get("isActive") || "",
+    createdFrom: params.get("createdFrom") || "",
+    createdTo: params.get("createdTo") || "",
+    paymentStatus: params.get("paymentStatus") || "",
+  }));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [editing, setEditing] = useState(null); // registration object being edited

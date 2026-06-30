@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import SkeletonCards from "../SkeletonCard";
+import { toast } from "../../utils/toast";
 import { DEFAULT_AVATAR, photoOf } from "../../utils/avatar";
 import NotActiveTag from "../NotActiveTag";
 import ChatModal from "../ChatModal";
@@ -47,12 +49,13 @@ function Section({ title, data, skip = [], extra = {} }) {
 
 export default function SearchResults() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const user = useSelector((s) => s.auth.user);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [acceptedSet, setAcceptedSet] = useState(new Set());
-  const [notice, setNotice] = useState(null);
+  const setNotice = (m) => { if (m) toast(m); };
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [chatWith, setChatWith] = useState(null);
@@ -118,25 +121,45 @@ export default function SearchResults() {
     ? `${detail.personal.firstName || ""} ${detail.personal.lastName || ""}`.trim()
     : (detail ? detail.registrationCode : "");
 
-  const queryNote = useMemo(() => (
-    <>
-      Looking for <b>{lookingFor || "Any"}</b>
-      {ageFrom && ageTo ? <> · Age <b>{ageFrom}–{ageTo}</b></> : null}
-      {education && education !== "Any" ? <> · <b>{education}</b></> : null}
-      {location && location !== "Any" ? <> · <b>{location}</b></> : null}
-      {community && community !== "Any" ? <> · <b>{community}</b></> : null}
-    </>
-  ), [lookingFor, ageFrom, ageTo, education, location, community]);
+  // Active-filter chips (removable).
+  const chips = useMemo(() => {
+    const c = [];
+    if (lookingFor) c.push({ label: `Looking for: ${lookingFor}`, keys: ["lookingFor"] });
+    if (ageFrom && ageTo) c.push({ label: `Age: ${ageFrom}–${ageTo}`, keys: ["ageFrom", "ageTo"] });
+    if (education && education !== "Any") c.push({ label: `Education: ${education}`, keys: ["education"] });
+    if (location && location !== "Any") c.push({ label: `Location: ${location}`, keys: ["location"] });
+    if (community && community !== "Any") c.push({ label: `Community: ${community}`, keys: ["community"] });
+    return c;
+  }, [lookingFor, ageFrom, ageTo, education, location, community]);
+
+  const removeChip = (keys) => {
+    const sp = new URLSearchParams(params);
+    keys.forEach((k) => sp.delete(k));
+    navigate(`/search/results?${sp.toString()}`);
+  };
+  const clearAll = () => navigate("/search/results");
 
   return (
     <div className="min-h-[60vh] bg-[#fdf8ee] px-4 py-10">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-[#3a0613]">Matching Profiles</h1>
-        <p className="text-sm text-gray-600 mt-1">{queryNote}</p>
+
+        {/* Active filter chips */}
+        {chips.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {chips.map((c) => (
+              <span key={c.keys.join()} className="inline-flex items-center gap-1.5 bg-[#fdf3da] border border-[#f0e4c8] text-[#7a1224] text-xs font-medium px-2.5 py-1 rounded-full">
+                {c.label}
+                <button type="button" onClick={() => removeChip(c.keys)} className="text-[#7a1224]/70 hover:text-[#7a1224] font-bold leading-none" aria-label={`Remove ${c.label}`}>×</button>
+              </span>
+            ))}
+            <button type="button" onClick={clearAll} className="text-xs text-[#6B0F2B] underline hover:no-underline">Clear all</button>
+          </div>
+        )}
 
         <div className="mt-6">
           {loading ? (
-            <p className="text-gray-500">Searching…</p>
+            <SkeletonCards count={6} />
           ) : error ? (
             <p className="text-red-700">{error}</p>
           ) : results.length === 0 ? (
@@ -201,16 +224,6 @@ export default function SearchResults() {
           )}
         </div>
       </div>
-
-      {/* Notice popup */}
-      {notice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[1100]" onClick={() => setNotice(null)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[#3a0613] font-semibold mb-4">{notice}</p>
-            <button onClick={() => setNotice(null)} className="px-6 py-2 rounded-full bg-[#6B0F2B] text-white text-sm font-semibold">OK</button>
-          </div>
-        </div>
-      )}
 
       {/* View Profile detail popup (email & mobile hidden) */}
       {detail && (

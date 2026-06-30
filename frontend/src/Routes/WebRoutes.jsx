@@ -17,6 +17,7 @@ import ContactUs from "../component/ContactUs";
 import ProfileDetails from "../component/Profile/ProfileDetails";
 import ProfileListPage from "../component/Profile/ProfileListPage";
 import SuccessStories from "../component/NavbarMenus/SuccessStories";
+import ToastContainer from "../component/ToastContainer";
 
 import AdminLogin from "../admin/AdminLogin";
 import AdminDashboard from "../admin/AdminDashboard";
@@ -31,6 +32,8 @@ import RequireAdmin from "../admin/RequireAdmin";
 function WebRoutes(){
 
 return(
+ <>
+ <ToastContainer/>
  <Routes>
 
    {/* Admin area - outside the public Layout (no matrimonial navbar/footer) */}
@@ -70,6 +73,7 @@ return(
    </Route>
 
  </Routes>
+ </>
 )
 
 }
